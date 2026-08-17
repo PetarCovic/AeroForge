@@ -3,12 +3,22 @@
 *.user
 *.suo
 
-# Build output
+# CMake / build output
 out/
 build/
-cmake-build-*/
-
-# CMake generated files
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
+compile_commands.json
+
+# Executables and binaries
+*.exe
+*.obj
+*.o
+*.lib
+*.dll
+*.pdb
+
+# OS files
+.DS_Store
+Thumbs.db
