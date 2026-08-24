@@ -17,6 +17,7 @@ add_executable(
     math/QuaternionTests.cpp
     geometry/TransformTests.cpp
     geometry/FrameTransformTests.cpp
+    simulation/StateTests.cpp
     integration/MathGeometryIntegrationTests.cpp
 )
 

@@ -13,6 +13,7 @@ add_library(AeroForgeCore
     src/math/Quaternion.cpp
     src/geometry/Transform.cpp
     src/geometry/FrameTransform.cpp
+    src/simulation/State.cpp
 )
 
 target_compile_features(AeroForgeCore
