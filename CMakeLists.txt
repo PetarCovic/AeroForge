@@ -145,3 +145,20 @@ include(CTest)
 if(BUILD_TESTING)
     add_subdirectory(tests)
 endif()
+
+add_subdirectory(benchmarks)
+add_subdirectory(examples)
+
+if(MSVC)
+    target_compile_options(AeroForgeCore PRIVATE
+        $<$<CONFIG:Release>:/Zi>
+    )
+
+    target_compile_options(AeroForgeBenchmarks PRIVATE
+        $<$<CONFIG:Release>:/Zi>
+    )
+
+    target_link_options(AeroForgeBenchmarks PRIVATE
+        $<$<CONFIG:Release>:/DEBUG>
+    )
+endif()
