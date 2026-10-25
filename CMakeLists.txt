@@ -47,6 +47,14 @@ add_library(AeroForgeCore
     src/rocket/ThrustMoment.cpp
     src/rocket/PropellantDepletion.cpp
     src/rocket/RocketDynamicsModel.cpp
+    src/sensors/AccelerometerModel.cpp
+    src/sensors/GyroscopeModel.cpp
+    src/sensors/ImuModel.cpp
+    src/sensors/GpsModel.cpp
+    src/sensors/SensorSchedule.cpp
+    src/navigation/NavigationState.cpp
+    src/navigation/InertialNavigator.cpp
+    src/navigation/GpsCorrector.cpp
 )
 
 target_compile_features(AeroForgeCore

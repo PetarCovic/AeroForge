@@ -54,6 +54,14 @@ add_executable(
     rocket/ThrustMomentTests.cpp
     rocket/PropellantDepletionTests.cpp
     rocket/RocketDynamicsModelTests.cpp
+    sensors/AccelerometerModelTests.cpp
+    sensors/GyroscopeModelTests.cpp
+    sensors/ImuModelTests.cpp
+    sensors/GpsModelTests.cpp
+    sensors/SensorScheduleTests.cpp
+    navigation/NavigationStateTests.cpp
+    navigation/InertialNavigatorTests.cpp
+    navigation/GpsCorrectorTests.cpp
     integration/MathGeometryIntegrationTests.cpp
     integration/NumericalAccuracyTests.cpp
     integration/SimulationCoreIntegrationTests.cpp
@@ -66,6 +74,7 @@ add_executable(
     integration/SixDoFIntegrationTests.cpp
     integration/RocketAnalyticalTests.cpp
     integration/RocketIntegrationTests.cpp
+    integration/NavigationIntegrationTests.cpp
 )
 
 target_compile_features(
