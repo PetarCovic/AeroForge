@@ -1,5 +1,9 @@
 # AeroForge Coordinate Systems
 
+> **Documentation status (October 2026):** Coordinate and quaternion contracts are normative for the design: right-handed NED navigation, FRD body, body-to-navigation `q_NB`, scalar-first quaternion storage, and SI quantities.
+> **Evidence boundary:** Design statements describe intended behavior; current implementation and measured results are established by source, tests, and archived benchmark reports, not by this specification alone.
+
+
 ## 1. Purpose
 
 This document defines AeroForge's coordinate frames, axis directions, handedness, rotation signs, quaternion convention, and transformation notation.
@@ -295,7 +299,7 @@ Coordinate-transform tests must eventually verify:
 
 ---
 
-## 15. Phase 0.7 Acceptance Criteria
+## 15. Frame Conventions Acceptance Criteria
 
 - [x] Right-handed coordinate systems selected.
 - [x] Local NED selected as the initial navigation/world convention.

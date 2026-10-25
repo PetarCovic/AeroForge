@@ -1,5 +1,9 @@
 # AeroForge Coding Standards
 
+> **Documentation status (October 2026):** These are engineering conventions and review expectations. The document is not proof that every existing source file has been audited for conformance.
+> **Evidence boundary:** Design statements describe intended behavior; current implementation and measured results are established by source, tests, and archived benchmark reports, not by this specification alone.
+
+
 ## 1. Purpose
 
 This document defines the coding conventions and engineering standards for AeroForge.

@@ -1,8 +1,12 @@
 # AeroForge Verification and Validation Plan
 
+> **Documentation status (October 2026):** This is a detailed verification and validation strategy, not a signed validation certificate. Passing unit tests does not establish physical model fidelity or real-time deadline guarantees on all hardware.
+> **Evidence boundary:** Design statements describe intended behavior; current implementation and measured results are established by source, tests, and archived benchmark reports, not by this specification alone.
+
+
 ## 1. Purpose
 
-This document defines the Phase 0.26 and 0.27 testing, verification, validation, regression, and benchmarking strategy.
+This document defines the original testing, verification, validation, regression, and benchmarking strategy.
 
 AeroForge treats verification and validation as part of model implementation, not a final cleanup task.
 
@@ -297,7 +301,7 @@ A model is considered implementation-complete when:
 
 ---
 
-## 14. Phase 0.26–0.27 Acceptance Criteria
+## 14. Verification Acceptance Criteria
 
 - [x] GoogleTest selected.
 - [x] CTest integration planned.

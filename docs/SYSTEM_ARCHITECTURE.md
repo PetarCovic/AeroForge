@@ -1,8 +1,12 @@
 # AeroForge System Architecture
 
+> **Documentation status (October 2026):** This document preserves the detailed architecture contract. The local Git history includes numerical simulation, 6DOF dynamics, environment, rocket models, sensors/navigation, control, fault injection, Monte Carlo, deterministic replay, telemetry, real-time execution, and benchmarks. End-to-end mission validation and visualization are separate milestones.
+> **Evidence boundary:** Design statements describe intended behavior; current implementation and measured results are established by source, tests, and archived benchmark reports, not by this specification alone.
+
+
 ## 1. Purpose
 
-This document defines the core software architecture for AeroForge, covering the Phase 0.9 through 0.21 design decisions.
+This document defines the core software architecture for AeroForge, covering the early design decisions.
 
 The architecture is intended to support:
 
@@ -14,7 +18,7 @@ The architecture is intended to support:
 - guidance, navigation, and control
 - failure injection
 - testing and validation
-- future Monte Carlo and real-time execution
+- Monte Carlo and real-time execution
 
 ---
 
@@ -70,7 +74,7 @@ where `n` is the integer step index.
 
 Wall-clock time is never authoritative for physics.
 
-Real-time mode, when added later, only paces execution to wall time.
+Real-time mode paces execution to wall time but does not make wall time authoritative for physics.
 
 ---
 
@@ -596,7 +600,7 @@ flowchart TD
 
 ---
 
-## 20. Phase 0.9–0.21 Acceptance Criteria
+## 20. Architecture Acceptance Criteria
 
 - [x] Rigid-body state representation defined.
 - [x] Simulation time model defined.

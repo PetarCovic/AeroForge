@@ -1,5 +1,9 @@
 # AeroForge Units and Physical Conventions
 
+> **Documentation status (October 2026):** Units and numerical conventions are the interface contract for interpreting model outputs and performance studies.
+> **Evidence boundary:** Design statements describe intended behavior; current implementation and measured results are established by source, tests, and archived benchmark reports, not by this specification alone.
+
+
 ## 1. Purpose
 
 This document defines AeroForge's authoritative internal units and physical quantity conventions.
@@ -171,7 +175,7 @@ A shorter name may be used where context and documentation already guarantee the
 
 ---
 
-## 13. Phase 0.8 Acceptance Criteria
+## 13. Units Acceptance Criteria
 
 - [x] SI selected as the internal unit system.
 - [x] Radians selected for internal angles.

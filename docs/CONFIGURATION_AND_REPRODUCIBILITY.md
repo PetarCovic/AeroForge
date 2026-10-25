@@ -1,8 +1,12 @@
 # AeroForge Configuration and Reproducibility
 
+> **Documentation status (October 2026):** Seed management, deterministic replay and related tests are represented in the source history. Mission JSON schemas, hashing, and a full configuration loader described here are design specifications unless individually confirmed by source and tests.
+> **Evidence boundary:** Design statements describe intended behavior; current implementation and measured results are established by source, tests, and archived benchmark reports, not by this specification alone.
+
+
 ## 1. Purpose
 
-This document defines the Phase 0.22 and 0.23 configuration and deterministic-execution architecture.
+This document defines the initial configuration and deterministic-execution architecture.
 
 ---
 
@@ -200,7 +204,7 @@ A failed Monte Carlo case must be reproducible independently.
 
 ---
 
-## 14. Phase 0.22–0.23 Acceptance Criteria
+## 14. Design Acceptance Criteria
 
 - [x] JSON selected as the initial configuration format.
 - [x] Configuration categories defined.

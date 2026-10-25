@@ -1,4 +1,7 @@
-# AeroForge Initial Simulation Mission
+# AeroForge Reference Mission — Detailed Engineering Specification
+
+> **Status (October 2026):** Detailed design and acceptance specification, not proof of a finished end-to-end guided rocket demonstration. Many component models exist and have automated tests; integrated flight validation and visualization are separate. Preserve numeric mission criteria below as *design targets*, not measured results.
+
 
 ## 1. Purpose
 
@@ -6,7 +9,7 @@ This document defines the initial reference mission for AeroForge.
 
 AeroForge is a general-purpose aerospace simulation, guidance, navigation, and control platform written in modern C++. The platform is intended to support deterministic, testable, and extensible simulation of aerospace vehicles.
 
-The first reference vehicle will be a **single-stage guided research rocket**.
+The planned integrated reference vehicle is a **single-stage guided research rocket**.
 
 The rocket is not the final scope of AeroForge. It is the first vehicle used to exercise the simulation platform's major engineering capabilities, including rigid-body dynamics, propulsion, aerodynamics, sensors, actuators, guidance, navigation, control, uncertainty, failure injection, and Monte Carlo analysis.
 
@@ -23,7 +26,7 @@ The platform should remain vehicle-agnostic and eventually support additional ae
 - experimental flight vehicles
 - other rigid-body aerospace systems
 
-The initial rocket exists as the first reference implementation.
+The research rocket is the intended flagship reference mission; not every integrated flight scenario is yet demonstrated.
 
 The long-term architectural relationship is:
 
@@ -45,7 +48,7 @@ Simulation infrastructure, environmental models, numerical integration, telemetr
 
 ## 3. Initial Reference Vehicle
 
-The first fully modeled vehicle will be a:
+The planned integrated reference vehicle is a:
 
 **Single-stage guided research rocket**
 
@@ -782,9 +785,9 @@ The initial mission should reinforce the following AeroForge principles:
 
 ---
 
-## 27. Phase 0.5 Decisions
+## 27. Reference-Mission Design Decisions
 
-The following decisions are considered the Phase 0.5 baseline:
+The following choices define the reference-mission baseline:
 
 | Area | Decision |
 |---|---|
@@ -792,10 +795,10 @@ The following decisions are considered the Phase 0.5 baseline:
 | Platform scope | General-purpose aerospace simulation and GNC |
 | Final reference dynamics | 6DOF rigid body |
 | Primary initial active control | Thrust vector control |
-| Initial sensors | IMU, GPS, barometric altimeter |
+| Planned initial sensors | IMU, GPS, barometric altimeter (barometer capability not confirmed here) |
 | Controller truth-state access | Not allowed in final flagship mission |
 | Navigation / Guidance / Control | Separate subsystems |
-| Initial controller | PID attitude control |
+| Initial controller design target | PID attitude control; the existing implementation includes an attitude PD controller |
 | Environment | Gravity, atmosphere, wind |
 | Propulsion | Time-dependent thrust curve |
 | Vehicle mass | Changes during powered flight |
@@ -809,9 +812,9 @@ The following decisions are considered the Phase 0.5 baseline:
 
 ---
 
-## 28. Phase 0.5 Acceptance Criteria
+## 28. Reference-Mission Design Review Checklist
 
-Phase 0.5 is complete when the project has formally established that:
+The following checklist records decisions in the mission **design specification**, not end-to-end flight-test acceptance:
 
 - [x] The first reference vehicle is a research rocket.
 - [x] AeroForge remains vehicle-agnostic.
@@ -820,7 +823,7 @@ Phase 0.5 is complete when the project has formally established that:
 - [x] The planned sensor suite includes an IMU, GPS, and barometric altimeter.
 - [x] GNC does not rely on perfect truth-state information in the flagship mission.
 - [x] Guidance, navigation, and control are separate responsibilities.
-- [x] PID attitude control is the initial controller.
+- [x] PID attitude control is a reference-mission design target; the available implementation includes a PD controller.
 - [x] Gravity, atmosphere, and wind are part of the planned environment.
 - [x] Propulsion supports time-dependent thrust.
 - [x] Vehicle mass changes during powered flight.

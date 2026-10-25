@@ -1,5 +1,9 @@
 # AeroForge Simulation Scope and Assumptions
 
+> **Documentation status (October 2026):** This is the original detailed fidelity/scope specification, retained for model limitations and engineering tradeoffs. Forward-looking language and fidelity levels are design targets—not a claim that every feature is complete.
+> **Evidence boundary:** Design statements describe intended behavior; current implementation and measured results are established by source, tests, and archived benchmark reports, not by this specification alone.
+
+
 ## 1. Purpose
 
 This document defines the physical scope, modeling assumptions, fidelity strategy, and explicit limitations for AeroForge.
@@ -1043,9 +1047,9 @@ Primary use:
 
 ---
 
-## 42. Phase 0.6 Baseline Decisions
+## 42. Model Scope Baseline Decisions
 
-The following decisions are the Phase 0.6 baseline:
+The following decisions are the Model Scope baseline:
 
 - AeroForge uses progressive model fidelity.
 - Initial vehicle dynamics assume a rigid body.
@@ -1086,9 +1090,9 @@ The following decisions are the Phase 0.6 baseline:
 
 ---
 
-## 43. Phase 0.6 Acceptance Criteria
+## 43. Model Scope Acceptance Criteria
 
-Phase 0.6 is complete when the project has formally established that:
+Model Scope is complete when the project has formally established that:
 
 - [x] AeroForge uses progressive fidelity.
 - [x] Initial vehicle physics assumes a rigid body.

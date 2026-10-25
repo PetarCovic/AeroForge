@@ -1,8 +1,12 @@
 # AeroForge Telemetry and Numerical Safety
 
+> **Documentation status (October 2026):** The repository includes telemetry recording, CSV output, events, flight/GNC analyses, and tests. Where this document specifies additional guarantees or a planned interface, confirm these against implementation before presenting them as verified.
+> **Evidence boundary:** Design statements describe intended behavior; current implementation and measured results are established by source, tests, and archived benchmark reports, not by this specification alone.
+
+
 ## 1. Purpose
 
-This document defines the Phase 0.24 and 0.25 telemetry, diagnostics, error-handling, and numerical-safety requirements.
+This document defines the original telemetry, diagnostics, error-handling, and numerical-safety requirements.
 
 ---
 
@@ -340,7 +344,7 @@ This enables deterministic replay and debugging.
 
 ---
 
-## 17. Phase 0.24–0.25 Acceptance Criteria
+## 17. Telemetry and Safety Acceptance Criteria
 
 - [x] Telemetry remains observational.
 - [x] CSV selected for initial time-series output.
