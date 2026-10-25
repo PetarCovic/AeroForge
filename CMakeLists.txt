@@ -71,6 +71,16 @@ add_library(AeroForgeCore
     src/montecarlo/MonteCarloConfig.cpp
     src/montecarlo/MonteCarloStatistics.cpp
     src/montecarlo/MonteCarloRunner.cpp
+    src/reproducibility/SeedManager.cpp
+    src/reproducibility/ReplayConfig.cpp
+    src/telemetry/TelemetryRecorder.cpp
+    src/telemetry/TelemetrySchedule.cpp
+    src/telemetry/CsvTelemetryWriter.cpp
+    src/telemetry/RunMetadata.cpp
+    src/telemetry/EventLogger.cpp
+    src/telemetry/FlightAnalyzer.cpp
+    src/telemetry/GncAnalyzer.cpp
+    src/telemetry/MonteCarloReport.cpp
 )
 
 target_compile_features(AeroForgeCore

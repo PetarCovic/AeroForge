@@ -78,8 +78,25 @@ add_executable(
     montecarlo/MonteCarloConfigTests.cpp
     montecarlo/MonteCarloStatisticsTests.cpp
     montecarlo/MonteCarloRunnerTests.cpp
+    reproducibility/SeedManagerTests.cpp
+    reproducibility/ReplayConfigTests.cpp
+    reproducibility/SensorReproducibilityTests.cpp
+    reproducibility/FailureReproducibilityTests.cpp
+    reproducibility/MonteCarloReproducibilityTests.cpp
+    reproducibility/TrialIndependenceTests.cpp
+    reproducibility/SimulationReplayTests.cpp
+    telemetry/TelemetryRecorderTests.cpp
+    telemetry/TelemetryScheduleTests.cpp
+    telemetry/CsvTelemetryWriterTests.cpp
+    telemetry/RunMetadataTests.cpp
+    telemetry/EventLoggerTests.cpp
+    telemetry/FlightAnalyzerTests.cpp
+    telemetry/GncAnalyzerTests.cpp
+    telemetry/MonteCarloReportTests.cpp
+    telemetry/TelemetryIntegrityTests.cpp
     integration/MathGeometryIntegrationTests.cpp
     integration/NumericalAccuracyTests.cpp
+    integration/DeterminismTests.cpp
     integration/SimulationCoreIntegrationTests.cpp
     integration/BallisticAnalyticalTests.cpp
     integration/TranslationalDynamicsIntegrationTests.cpp
@@ -96,6 +113,7 @@ add_executable(
     integration/FullGncStackIntegrationTests.cpp
     integration/FailureInjectionIntegrationTests.cpp
     integration/MonteCarloIntegrationTests.cpp
+    integration/TelemetryIntegrationTests.cpp
 )
 
 target_compile_features(
