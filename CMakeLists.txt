@@ -40,6 +40,13 @@ add_library(AeroForgeCore
     src/aerodynamics/AerodynamicReference.cpp
     src/aerodynamics/AirData.cpp
     src/aerodynamics/SimpleAerodynamicModel.cpp
+    src/rocket/PropellantTank.cpp
+    src/rocket/RocketMassProperties.cpp
+    src/rocket/ThrustCurve.cpp
+    src/rocket/RocketEngine.cpp
+    src/rocket/ThrustMoment.cpp
+    src/rocket/PropellantDepletion.cpp
+    src/rocket/RocketDynamicsModel.cpp
 )
 
 target_compile_features(AeroForgeCore

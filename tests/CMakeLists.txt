@@ -47,6 +47,13 @@ add_executable(
     aerodynamics/AerodynamicReferenceTests.cpp
     aerodynamics/AirDataTests.cpp
     aerodynamics/SimpleAerodynamicModelTests.cpp
+    rocket/PropellantTankTests.cpp
+    rocket/RocketMassPropertiesTests.cpp
+    rocket/ThrustCurveTests.cpp
+    rocket/RocketEngineTests.cpp
+    rocket/ThrustMomentTests.cpp
+    rocket/PropellantDepletionTests.cpp
+    rocket/RocketDynamicsModelTests.cpp
     integration/MathGeometryIntegrationTests.cpp
     integration/NumericalAccuracyTests.cpp
     integration/SimulationCoreIntegrationTests.cpp
@@ -57,6 +64,8 @@ add_executable(
     integration/AerodynamicIntegrationTests.cpp
     integration/SixDoFAnalyticalTests.cpp
     integration/SixDoFIntegrationTests.cpp
+    integration/RocketAnalyticalTests.cpp
+    integration/RocketIntegrationTests.cpp
 )
 
 target_compile_features(
