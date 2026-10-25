@@ -37,6 +37,8 @@ namespace aeroforge::simulation
 		bool isFinite() const;
 
 		bool isApprox(const State& other, double epsilon) const;
+
+		State& addScaled(const State& other, double scalar);
 	};
 
 	State operator*(double scalar, const State& state);

@@ -1096,6 +1096,173 @@ namespace aeroforge::math
 		return result;
 	}
 
+	bool Matrix::isEqual(const Matrix& other) const
+	{
+		if (Rows != other.Rows ||
+			Columns != other.Columns)
+		{
+			return false;
+		}
+
+		for (std::size_t row = 0;
+			row < Rows;
+			++row)
+		{
+			for (std::size_t column = 0;
+				column < Columns;
+				++column)
+			{
+				if ((*this)(row, column) !=
+					other(row, column))
+				{
+					return false;
+				}
+			}
+		}
+
+		return true;
+	}
+
+	bool Matrix::isSymmetric(double tolerance) const
+	{
+		if (!std::isfinite(tolerance) ||
+			tolerance < 0.0)
+		{
+			throw std::invalid_argument(
+				"Tolerance must be finite and non-negative");
+		}
+
+		if (!isFinite())
+		{
+			return false;
+		}
+
+		if (!isSquare())
+		{
+			return false;
+		}
+
+		for (std::size_t row = 0;
+			row < Rows;
+			++row)
+		{
+			for (std::size_t column = row + 1;
+				column < Columns;
+				++column)
+			{
+				if (std::abs(
+					(*this)(row, column)
+					- (*this)(column, row))
+				> tolerance)
+				{
+					return false;
+				}
+			}
+		}
+
+		return true;
+	}
+
+	bool Matrix::isPositiveDefinite(double tolerance) const
+	{
+		if (!std::isfinite(tolerance) || tolerance < 0.0)
+		{
+			throw std::invalid_argument(
+				"Tolerance must be finite and non-negative");
+		}
+
+		if (!isSquare() || !isFinite())
+		{
+			return false;
+		}
+
+		if (!isSymmetric(tolerance))
+		{
+			return false;
+		}
+
+		if (Rows == 0)
+		{
+			return false;
+		}
+
+		Matrix lower(Rows, Columns, 0.0);
+
+		double scale = 0.0;
+
+		for (std::size_t i = 0; i < Rows; ++i)
+		{
+			scale = std::max(
+				scale,
+				std::abs((*this)(i, i)));
+		}
+
+		if (scale == 0.0)
+		{
+			return false;
+		}
+
+		const double threshold =
+			tolerance * scale;
+
+		for (std::size_t row = 0; row < Rows; ++row)
+		{
+			for (std::size_t column = 0;
+				column <= row;
+				++column)
+			{
+				double sum = 0.0;
+
+				for (std::size_t k = 0;
+					k < column;
+					++k)
+				{
+					sum +=
+						lower(row, k)
+						* lower(column, k);
+				}
+
+				if (row == column)
+				{
+					const double diagonal =
+						(*this)(row, row) - sum;
+
+					if (!std::isfinite(diagonal) ||
+						diagonal <= threshold)
+					{
+						return false;
+					}
+
+					lower(row, column) =
+						std::sqrt(diagonal);
+				}
+				else
+				{
+					const double divisor =
+						lower(column, column);
+
+					if (divisor == 0.0 ||
+						!std::isfinite(divisor))
+					{
+						return false;
+					}
+
+					lower(row, column) =
+						((*this)(row, column) - sum)
+						/ divisor;
+
+					if (!std::isfinite(
+						lower(row, column)))
+					{
+						return false;
+					}
+				}
+			}
+		}
+
+		return true;
+	}
+
 	Matrix toMatrix(const Vector3& vector)
 	{
 		Matrix result(3, 1);

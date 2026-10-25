@@ -168,8 +168,7 @@ namespace aeroforge::simulation
 	{
 		if (epsilon <= 0.0)
 		{
-			throw std::invalid_argument(
-				"Epsilon must be greater than zero");
+			throw std::invalid_argument("Epsilon must be greater than zero");
 		}
 
 		if (this->size() != other.size())
@@ -211,6 +210,21 @@ namespace aeroforge::simulation
 		}
 
 		return true;
+	}
+
+	State& State::addScaled(const State& other, double scalar)
+	{
+		if (this->size() != other.size())
+		{
+			throw std::invalid_argument("State dimensions must match");
+		}
+
+		for (std::size_t i = 0; i < other.size(); ++i)
+		{
+			values[i] += other.values[i] * scalar;
+		}
+
+		return *this;
 	}
 
 	State operator*(

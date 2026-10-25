@@ -18,7 +18,13 @@ add_executable(
     geometry/TransformTests.cpp
     geometry/FrameTransformTests.cpp
     simulation/StateTests.cpp
+    simulation/EulerIntegratorTests.cpp
+    simulation/RK4IntegratorTests.cpp
+    simulation/SimulationClockTests.cpp
+    simulation/SimulationRunnerTests.cpp
     integration/MathGeometryIntegrationTests.cpp
+    integration/NumericalAccuracyTests.cpp
+    integration/SimulationCoreIntegrationTests.cpp
 )
 
 target_compile_features(

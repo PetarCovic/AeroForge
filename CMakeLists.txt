@@ -14,6 +14,10 @@ add_library(AeroForgeCore
     src/geometry/Transform.cpp
     src/geometry/FrameTransform.cpp
     src/simulation/State.cpp
+    src/simulation/EulerIntegrator.cpp
+    src/simulation/RK4Integrator.cpp
+    src/simulation/SimulationClock.cpp
+    src/simulation/SimulationRunner.cpp
 )
 
 target_compile_features(AeroForgeCore

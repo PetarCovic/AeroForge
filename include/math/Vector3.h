@@ -42,6 +42,7 @@ namespace aeroforge::math
 		bool isNormalized() const;
 		Vector3 reflect(const Vector3& normal) const;
 		Vector3 lerp(const Vector3& other, double t) const;
+		bool isZero() const;
 		double& operator[](std::size_t index);
 		const double& operator[](std::size_t index) const;
 	};

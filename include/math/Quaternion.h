@@ -52,6 +52,7 @@ namespace aeroforge::math
 		static Quaternion fromRotationZ(double angle);
 		static Quaternion fromTwoVectors(const Vector3& from, const Vector3& to);
 		bool isFinite() const;
+		bool isZero() const;
 		bool isApprox(const Quaternion& other, const double epsilon) const;
 		bool isNormalized(const double epsilon) const;
 		bool isIdentity(const double epsilon) const;

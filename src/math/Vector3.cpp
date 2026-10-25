@@ -217,6 +217,11 @@ namespace aeroforge::math
 		return Vector3(this->x + (other.x - this->x) * t, this->y + (other.y - this->y) * t, this->z + (other.z - this->z) * t);
 	}
 
+	bool Vector3::isZero() const
+	{
+		return this->x == 0 && this->y == 0 && this->z == 0;
+	}
+
 	double& Vector3::operator[](std::size_t index)
 	{
 		switch (index)

@@ -159,6 +159,12 @@ namespace aeroforge::math
 			std::size_t rowCount,
 			std::size_t columnCount) const;
 
+		bool isEqual(const Matrix& other) const;
+
+		bool isSymmetric(double tolerance = 1e-12) const;
+
+		bool isPositiveDefinite(double tolerance = 1e-12) const;
+
 	private:
 		std::size_t Rows;
 		std::size_t Columns;

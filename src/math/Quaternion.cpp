@@ -790,6 +790,14 @@ namespace aeroforge::math
 			std::isfinite(this->z);
 	}
 
+	bool Quaternion::isZero() const
+	{
+		return w == 0.0
+			&& x == 0.0
+			&& y == 0.0
+			&& z == 0.0;
+	}
+
 	bool Quaternion::isApprox(
 		const Quaternion& other,
 		const double epsilon) const
