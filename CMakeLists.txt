@@ -18,6 +18,18 @@ add_library(AeroForgeCore
     src/simulation/RK4Integrator.cpp
     src/simulation/SimulationClock.cpp
     src/simulation/SimulationRunner.cpp
+    src/dynamics/TranslationalState.cpp
+    src/dynamics/ForceAccumulator.cpp
+    src/dynamics/MassProperties.cpp
+    src/dynamics/TranslationalDynamicsModel.cpp
+    src/dynamics/ConstantGravity.cpp
+    src/dynamics/RigidBodyState.cpp
+    src/dynamics/InertiaProperties.cpp
+    src/dynamics/MomentAccumulator.cpp
+    src/dynamics/RotationalKinematics.cpp
+    src/dynamics/RotationalDynamics.cpp
+    src/dynamics/RigidBodyQuaternionNormalization.cpp
+    src/dynamics/SixDoFDynamicsModel.cpp
 )
 
 target_compile_features(AeroForgeCore

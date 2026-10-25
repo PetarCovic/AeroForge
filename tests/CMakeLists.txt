@@ -22,9 +22,25 @@ add_executable(
     simulation/RK4IntegratorTests.cpp
     simulation/SimulationClockTests.cpp
     simulation/SimulationRunnerTests.cpp
+    dynamics/TranslationalStateTests.cpp
+    dynamics/ForceAccumulatorTests.cpp
+    dynamics/MassPropertiesTests.cpp
+    dynamics/TranslationalDynamicsModelTests.cpp
+    dynamics/ConstantGravityTests.cpp
+    dynamics/RigidBodyStateTests.cpp
+    dynamics/InertiaPropertiesTests.cpp
+    dynamics/MomentAccumulatorTests.cpp
+    dynamics/RotationalKinematicsTests.cpp
+    dynamics/RotationalDynamicsTests.cpp
+    dynamics/RigidBodyQuaternionNormalizationTests.cpp
+    dynamics/SixDoFDynamicsModelTests.cpp
     integration/MathGeometryIntegrationTests.cpp
     integration/NumericalAccuracyTests.cpp
     integration/SimulationCoreIntegrationTests.cpp
+    integration/BallisticAnalyticalTests.cpp
+    integration/TranslationalDynamicsIntegrationTests.cpp
+    integration/SixDoFAnalyticalTests.cpp
+    integration/SixDoFIntegrationTests.cpp
 )
 
 target_compile_features(
