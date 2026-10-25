@@ -62,6 +62,14 @@ add_executable(
     navigation/NavigationStateTests.cpp
     navigation/InertialNavigatorTests.cpp
     navigation/GpsCorrectorTests.cpp
+    actuators/ThrottleActuatorTests.cpp
+    actuators/GimbalActuatorTests.cpp
+    actuators/BodyMomentActuatorTests.cpp
+    actuators/GimbaledThrustTests.cpp
+    gnc/AttitudeSetpointTests.cpp
+    gnc/HoldAttitudeGuidanceTests.cpp
+    gnc/AttitudeErrorTests.cpp
+    gnc/AttitudePdControllerTests.cpp
     integration/MathGeometryIntegrationTests.cpp
     integration/NumericalAccuracyTests.cpp
     integration/SimulationCoreIntegrationTests.cpp
@@ -75,6 +83,9 @@ add_executable(
     integration/RocketAnalyticalTests.cpp
     integration/RocketIntegrationTests.cpp
     integration/NavigationIntegrationTests.cpp
+    integration/GncClosedLoopIntegrationTests.cpp
+    integration/GncNavigationIntegrationTests.cpp
+    integration/FullGncStackIntegrationTests.cpp
 )
 
 target_compile_features(

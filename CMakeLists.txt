@@ -55,6 +55,14 @@ add_library(AeroForgeCore
     src/navigation/NavigationState.cpp
     src/navigation/InertialNavigator.cpp
     src/navigation/GpsCorrector.cpp
+    src/actuators/ThrottleActuator.cpp
+    src/actuators/GimbalActuator.cpp
+    src/actuators/BodyMomentActuator.cpp
+    src/actuators/GimbaledThrust.cpp
+    src/gnc/AttitudeSetpoint.cpp
+    src/gnc/HoldAttitudeGuidance.cpp
+    src/gnc/AttitudeError.cpp
+    src/gnc/AttitudePdController.cpp
 )
 
 target_compile_features(AeroForgeCore
