@@ -18,6 +18,9 @@ add_library(AeroForgeCore
     src/simulation/RK4Integrator.cpp
     src/simulation/SimulationClock.cpp
     src/simulation/SimulationRunner.cpp
+    src/simulation/RealtimeExecutionConfig.cpp
+    src/simulation/SimulationPacer.cpp
+    src/simulation/RealtimeSimulationRunner.cpp
     src/dynamics/TranslationalState.cpp
     src/dynamics/ForceAccumulator.cpp
     src/dynamics/MassProperties.cpp
@@ -81,6 +84,9 @@ add_library(AeroForgeCore
     src/telemetry/FlightAnalyzer.cpp
     src/telemetry/GncAnalyzer.cpp
     src/telemetry/MonteCarloReport.cpp
+    src/performance/PerformanceTimer.cpp
+    src/performance/RealtimeFactor.cpp
+    src/performance/PerformanceSummary.cpp
 )
 
 target_compile_features(AeroForgeCore

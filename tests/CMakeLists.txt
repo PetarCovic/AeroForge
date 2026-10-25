@@ -22,6 +22,8 @@ add_executable(
     simulation/RK4IntegratorTests.cpp
     simulation/SimulationClockTests.cpp
     simulation/SimulationRunnerTests.cpp
+    simulation/SimulationPacerTests.cpp
+    simulation/RealtimeSimulationRunnerTests.cpp
     dynamics/TranslationalStateTests.cpp
     dynamics/ForceAccumulatorTests.cpp
     dynamics/MassPropertiesTests.cpp
@@ -94,6 +96,7 @@ add_executable(
     telemetry/GncAnalyzerTests.cpp
     telemetry/MonteCarloReportTests.cpp
     telemetry/TelemetryIntegrityTests.cpp
+    performance/PerformanceRegressionTests.cpp
     integration/MathGeometryIntegrationTests.cpp
     integration/NumericalAccuracyTests.cpp
     integration/DeterminismTests.cpp
