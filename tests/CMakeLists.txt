@@ -70,6 +70,14 @@ add_executable(
     gnc/HoldAttitudeGuidanceTests.cpp
     gnc/AttitudeErrorTests.cpp
     gnc/AttitudePdControllerTests.cpp
+    failures/FaultScheduleTests.cpp
+    failures/SensorFaultInjectorTests.cpp
+    failures/GpsFaultInjectorTests.cpp
+    failures/ActuatorFaultInjectorTests.cpp
+    montecarlo/ParameterDistributionTests.cpp
+    montecarlo/MonteCarloConfigTests.cpp
+    montecarlo/MonteCarloStatisticsTests.cpp
+    montecarlo/MonteCarloRunnerTests.cpp
     integration/MathGeometryIntegrationTests.cpp
     integration/NumericalAccuracyTests.cpp
     integration/SimulationCoreIntegrationTests.cpp
@@ -86,6 +94,8 @@ add_executable(
     integration/GncClosedLoopIntegrationTests.cpp
     integration/GncNavigationIntegrationTests.cpp
     integration/FullGncStackIntegrationTests.cpp
+    integration/FailureInjectionIntegrationTests.cpp
+    integration/MonteCarloIntegrationTests.cpp
 )
 
 target_compile_features(

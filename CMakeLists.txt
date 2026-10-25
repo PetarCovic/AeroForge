@@ -63,6 +63,14 @@ add_library(AeroForgeCore
     src/gnc/HoldAttitudeGuidance.cpp
     src/gnc/AttitudeError.cpp
     src/gnc/AttitudePdController.cpp
+    src/failures/FaultSchedule.cpp
+    src/failures/SensorFaultInjector.cpp
+    src/failures/GpsFaultInjector.cpp
+    src/failures/ActuatorFaultInjector.cpp
+    src/montecarlo/ParameterDistribution.cpp
+    src/montecarlo/MonteCarloConfig.cpp
+    src/montecarlo/MonteCarloStatistics.cpp
+    src/montecarlo/MonteCarloRunner.cpp
 )
 
 target_compile_features(AeroForgeCore
