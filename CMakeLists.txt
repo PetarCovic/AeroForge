@@ -30,6 +30,16 @@ add_library(AeroForgeCore
     src/dynamics/RotationalDynamics.cpp
     src/dynamics/RigidBodyQuaternionNormalization.cpp
     src/dynamics/SixDoFDynamicsModel.cpp
+    src/environment/AtmosphereState.cpp
+    src/environment/StandardAtmosphere.cpp
+    src/environment/ConstantWindModel.cpp
+    src/environment/RelativeAirVelocity.cpp
+    src/aerodynamics/AerodynamicAngles.cpp
+    src/aerodynamics/AerodynamicCoefficients.cpp
+    src/aerodynamics/AerodynamicFrameTransform.cpp
+    src/aerodynamics/AerodynamicReference.cpp
+    src/aerodynamics/AirData.cpp
+    src/aerodynamics/SimpleAerodynamicModel.cpp
 )
 
 target_compile_features(AeroForgeCore

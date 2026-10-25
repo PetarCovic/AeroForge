@@ -34,11 +34,27 @@ add_executable(
     dynamics/RotationalDynamicsTests.cpp
     dynamics/RigidBodyQuaternionNormalizationTests.cpp
     dynamics/SixDoFDynamicsModelTests.cpp
+    environment/AtmosphereStateTests.cpp
+    environment/AtmosphereModelTests.cpp
+    environment/StandardAtmosphereTests.cpp
+    environment/ConstantWindModelTests.cpp
+    environment/WindModelTests.cpp
+    environment/RelativeAirVelocityTests.cpp
+    aerodynamics/AerodynamicAnglesTests.cpp
+    aerodynamics/AerodynamicCoefficientsTests.cpp
+    aerodynamics/AerodynamicFrameTransformTests.cpp
+    aerodynamics/AerodynamicModelTests.cpp
+    aerodynamics/AerodynamicReferenceTests.cpp
+    aerodynamics/AirDataTests.cpp
+    aerodynamics/SimpleAerodynamicModelTests.cpp
     integration/MathGeometryIntegrationTests.cpp
     integration/NumericalAccuracyTests.cpp
     integration/SimulationCoreIntegrationTests.cpp
     integration/BallisticAnalyticalTests.cpp
     integration/TranslationalDynamicsIntegrationTests.cpp
+    integration/AtmosphereValidationTests.cpp
+    integration/EnvironmentIntegrationTests.cpp
+    integration/AerodynamicIntegrationTests.cpp
     integration/SixDoFAnalyticalTests.cpp
     integration/SixDoFIntegrationTests.cpp
 )
