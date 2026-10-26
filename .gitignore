@@ -1,94 +1,118 @@
+
 # ============================================================
-# CMake build directories
+# AeroForge — Git Ignore Rules
 # ============================================================
 
-build/
-build-*/
-out/
-cmake-build-*/
+# ------------------------------------------------------------
+# CMake / Ninja build outputs
+# ------------------------------------------------------------
+/build/
+/build-*/
+/out/
+/cmake-build-*/
 
-# CMake generated files
-CMakeCache.txt
 CMakeFiles/
+CMakeCache.txt
 cmake_install.cmake
 CTestTestfile.cmake
-Makefile
-Testing/
+build.ninja
+.ninja_deps
+.ninja_log
 compile_commands.json
+Testing/
 
 
-# ============================================================
-# Visual Studio
-# ============================================================
-
-.vs/
-*.sln
-*.vcxproj
-*.vcxproj.filters
-*.vcxproj.user
-*.suo
-*.user
-
-# Visual Studio build output
-Debug/
-Release/
-RelWithDebInfo/
-MinSizeRel/
-x64/
-x86/
-
-
-# ============================================================
-# C/C++ compiled output
-# ============================================================
-
+# ------------------------------------------------------------
+# Compiled binaries and intermediate files
+# ------------------------------------------------------------
 *.exe
 *.dll
-*.lib
-*.obj
-*.o
-*.a
 *.so
 *.dylib
+*.obj
+*.o
+*.lib
+*.a
 *.pdb
 *.ilk
-*.exp
 *.idb
-*.ipdb
-*.iobj
+*.exp
+*.tlog
+*.lastbuildstate
+*.pch
 
+# ------------------------------------------------------------
+# Visual Studio / IDE
+# ------------------------------------------------------------
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.sln.docstates
+*.VC.db
+*.VC.opendb
+*.VC.db-shm
+*.VC.db-wal
 
-# ============================================================
-# Testing / coverage
-# ============================================================
+# Eclipse
+.metadata/
+.settings/
 
-*.gcda
-*.gcno
-*.gcov
-coverage/
-coverage-report/
-test-results/
+# ------------------------------------------------------------
+# AeroForge visualizer local state
+# ------------------------------------------------------------
+AeroForgeVisualizer.ini
+imgui.ini
 
+# ------------------------------------------------------------
+# Generated simulation and analysis outputs
+# ------------------------------------------------------------
+/examples/output/
+/benchmarks/output/
+/tests/output/
 
-# ============================================================
-# Benchmarks / simulation output
-# ============================================================
+/results/
+/reports/generated/
+/logs/
 
-benchmark-results/
-simulation-output/
-logs/
-*.log
-
-
-# ============================================================
-# Temporary files
-# ============================================================
-
+# ------------------------------------------------------------
+# Temporary data and benchmark captures
+# ------------------------------------------------------------
 *.tmp
 *.temp
 *.bak
-*.swp
-*.swo
-*~
+*.orig
+*.log
+*.trace
+
+# ------------------------------------------------------------
+# Python cache and local environments
+# ------------------------------------------------------------
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# ------------------------------------------------------------
+# Operating system files
+# ------------------------------------------------------------
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# ------------------------------------------------------------
+# Local installation / integration scripts
+# ------------------------------------------------------------
+/tools/phase17_10_reallive/
+/tools/install_phase_17_10_reallive.py
+/tools/install_phase17_10_reallive.py
+/tools/install_phase_17_10_reallive.py.bak
+
+# ------------------------------------------------------------
+# Locally imported datasets
+# ------------------------------------------------------------
+/examples/data/
+
+# Temporary Phase 17 integration installer
+/tools/install_phase_17_10_reallive.py

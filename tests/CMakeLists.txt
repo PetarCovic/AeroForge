@@ -97,6 +97,21 @@ add_executable(
     telemetry/MonteCarloReportTests.cpp
     telemetry/TelemetryIntegrityTests.cpp
     performance/PerformanceRegressionTests.cpp
+    visualization/PlaybackControllerTests.cpp
+    visualization/VisualizationInterpolatorTests.cpp
+    visualization/RecordedTelemetryDataSourceTests.cpp
+    visualization/LiveTelemetryPublisherTests.cpp
+    visualization/VisualizationModelTests.cpp
+    visualization/TrajectoryHistoryTests.cpp
+    visualization/LiveVisualizationModelTests.cpp
+    visualization/Camera3DTests.cpp
+    visualization/FrameTimingStatsTests.cpp
+    visualization/LiveTelemetryStressTests.cpp
+    visualization/PlotDataBuilderTests.cpp
+    visualization/TelemetryCsvLoaderTests.cpp
+    visualization/VisualizationDeterminismTests.cpp
+    visualization/VisualizationSessionTests.cpp
+    visualization/SixDoFLiveSimulationTests.cpp
     integration/MathGeometryIntegrationTests.cpp
     integration/NumericalAccuracyTests.cpp
     integration/DeterminismTests.cpp
