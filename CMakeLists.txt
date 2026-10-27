@@ -34,6 +34,8 @@ add_library(AeroForgeCore
     src/simulation/SimulationPacer.cpp
     src/simulation/RealtimeSimulationRunner.cpp
 
+    src/hil/LoopbackTransport.cpp
+
     src/dynamics/TranslationalState.cpp
     src/dynamics/ForceAccumulator.cpp
     src/dynamics/MassProperties.cpp
@@ -281,9 +283,6 @@ if(AEROFORGE_BUILD_VISUALIZATION)
         src/visualization/gui/main.cpp
         src/visualization/gui/VisualizationApp.h
         src/visualization/gui/VisualizationApp.cpp
-        src/visualization/gui/PanelVisibility.h
-        src/visualization/gui/GuiTheme.h
-        src/visualization/gui/GuiTheme.cpp
 
         #
         # Interface state and appearance
