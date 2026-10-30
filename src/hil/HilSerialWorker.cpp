@@ -339,6 +339,8 @@ namespace aeroforge::hil
 
             if (received.bytes != 0)
             {
+                receivedBytes_.fetch_add(received.bytes);
+
                 const std::size_t pushed =
                     pushReceived(
                         std::span<const std::uint8_t>(

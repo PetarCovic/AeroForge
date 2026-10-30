@@ -199,8 +199,7 @@ namespace aeroforge::hil
         {
             result.cancelled = true;
             bridge.notifyTransportDisconnected();
-            result.finalHealth = makeHealth(bridge, timing, worker,
-                config.stepS * 1000.0, false);
+            result.finalHealth = makeHealth(bridge, timing, worker, config.stepS * 1000.0, false);
             worker.stop();
             result.finalHealth.serialState = HilSerialWorkerState::STOPPED;
             telemetry.publishHealth(result.finalHealth);

@@ -6,7 +6,7 @@ AeroForge is a modular engineering project for simulating rigid-body motion, num
 
 The **guided research rocket** is the platform's reference mission, not the limit of its intended architecture. AeroForge's components are designed for reuse across different aerospace vehicle models.
 
-> **Project status:** The core simulation, 6DOF dynamics, supporting aerospace models, live visualization, software HIL, and physical ESP32 HIL have been implemented and exercised locally. The automated regression suite was reported passing after hardware HIL integration. Software HIL benchmark evidence and physical HIL benchmark evidence have passed internal-consistency audits. The full guided-rocket reference mission and manual hardware disconnect/recovery sign-off are **not** claimed as complete.
+> **Project status (October 30, 2026):** The core simulation, 6DOF dynamics, supporting aerospace models, live visualization, software HIL, and physical ESP32 HIL have been implemented and exercised locally. A clean Windows x64 Release build passed all **1,557 registered CTest tests**, and the visualizer launched successfully. Software HIL benchmark evidence and physical HIL benchmark evidence have passed internal-consistency audits. The full guided-rocket reference mission and manual hardware disconnect/recovery sign-off are **not** claimed as complete.
 >
 > **Timing distinction:** The physical HIL simulation maintained a tested 100 Hz physics schedule, but the ESP32 did **not** provide a new controller response on every physics step. See [measured HIL results](docs/performance/HilPerformanceReport.md).
 
@@ -19,7 +19,31 @@ The **guided research rocket** is the platform's reference mission, not the limi
 - **Software and physical HIL:** Versioned binary sensor/control exchange with COBS framing, CRC-32, sequence validation, command freshness tracking, and watchdog fallback; a physical ESP32 communicates over USB-to-UART.
 - **Engineering evidence:** GoogleTest/CTest regression coverage, analytical/integration tests, timed benchmarks, and a C++ tool for auditing saved benchmark evidence.
 
+## Demonstrations
+
+Each demo includes a short title card and a recording of the AeroForge visualizer. Click a thumbnail to view the corresponding MP4.
+
+### Demo 1 — Rocket Flight Telemetry Visualization
+
+[![Rocket flight telemetry visualization](demo/RocketFlightTelemetryVisualizationDemo.png)](demo/RocketFlightTelemetryVisualizationDemo.mp4)
+
+Recorded 6DOF rocket-flight telemetry playback, including synchronized trajectory plots, vehicle attitude, and flight-event milestones. This is a simplified simulation recording, not a validated integrated guided-rocket mission.
+
+### Demo 2 — Live 6DOF Physics Simulation
+
+[![Live 6DOF physics simulation](demo/Live6DOFPhysicsSimulationDemo.png)](demo/Live6DOFPhysicsSimulationDemo.mp4)
+
+Live rigid-body simulation with RK4 numerical integration, changing flight state, real-time telemetry, and 3D vehicle orientation. The recording also includes a **synthetic telemetry display test**, which exercises the GUI and is not physical simulation output.
+
+### Demo 3 — GNC and Software HIL Integration
+
+[![GNC and software HIL](demo/GNCandHardware-in-the-LoopIntegrationDemo.png)](demo/GNCandHardware-in-the-LoopIntegrationDemo.mp4)
+
+Software HIL sensor/control communication and monitoring, including the control interface and live diagnostics. This demonstration does not establish physical-HIL fresh-response acceptance or hardware safety certification.
+
 ## Measured results
+
+**Release regression verification (October 30, 2026):** A fresh Windows x64 Release configuration built successfully, **1,557 registered CTest tests passed**, and the desktop visualizer launched and operated successfully in a manual check. This is separate from the historical workload measurements below.
 
 Recent measurements from the Windows x64 Release configuration are summarized below. These are observations from the recorded workloads, **not guarantees** for other hardware or configurations.
 
@@ -250,6 +274,8 @@ The physical audit **passed with a response-rate warning**, while the underlying
 
 AeroForge uses GoogleTest/CTest component and integration tests, analytical comparisons, deterministic replay tests, numerical and performance benchmarks, and recorded verification evidence. Existing coverage includes numerical integration, 6DOF rigid-body dynamics, atmosphere/aerodynamics, propulsion, sensors, GNC, navigation, fault injection, Monte Carlo, telemetry, and visualization.
 
+**Current local release check (October 30, 2026):** The `out/build/x64-release-v01` Windows x64 Release configuration built successfully; all **1,557 registered CTest tests passed**; and the visualizer was manually launched and exercised. Repeated test runs and a separate headless build are not claimed as passing unless independently recorded. See [Current Verification Results](docs/verification/CurrentVerificationResults.md).
+
 Three recent HIL evidence datasets passed the C++ audit: **100,000-step software unpaced**, **10,000-step software paced**, and **1,000-step physical HIL**. An evidence audit checks recorded-data consistency; it does not replace external physical validation or make a failed performance threshold pass.
 
 Selected historical *different-workload* benchmarks, retained for engineering context:
@@ -291,6 +317,7 @@ AeroForge/
 ├── examples/                    Standalone demonstrations
 ├── firmware/esp32s3/            ESP-IDF project (target: esp32)
 ├── tools/verification/          C++ benchmark evidence auditor
+├── demo/                        Three showcase videos and thumbnail images
 ├── docs/                        Specifications, guides, reports
 ├── cmake/                       Supporting CMake integration
 ├── CMakeLists.txt
@@ -329,7 +356,7 @@ Current limitations include:
 - Manual physical-GUI disconnect, watchdog fallback, and reconnection validation has not yet been signed off in the reported evidence.
 - Several advanced fidelity models described in design documents remain intended extensions rather than verified features.
 
-Potential improvements include additional guided-flight integration, richer model validation, longer hardware endurance, serial throughput tuning, and broader compiler/platform coverage. Deferred enhancements will be organized in `NextSteps.md` after the release-preparation work is finished; that document is not presented as already existing.
+Potential improvements include additional guided-flight integration, richer model validation, longer hardware endurance, serial throughput tuning, and broader compiler/platform coverage. Deferred enhancements and known validation gaps are tracked in [Next Steps](docs/NextSteps.md).
 
 ## Licensing
 

@@ -62,7 +62,8 @@
 
 ### A5. Documentation correctness and media — high impact
 
-- [ ] Add actual visualizer screenshots, a short physics demo, and a physical HIL demonstration video with measured overlays.
+- [ ] Capture portfolio screenshots only after the GUI layout, HIL plotting, and data-source labeling checks in **Section F**; make 3D flight, telemetry, and HIL state easy to see in a single view.
+- [ ] Add an actual 6DOF physics demo, a separate software HIL demo, and a verified physical ESP32 HIL video; display measured metrics without suggesting the physical controller supplies a new command on every 100 Hz physics step.
 - [ ] Keep the flagship guided-rocket mission labeled as an *integrated future goal* until independently validated.
 - [ ] Use measured benchmark numbers with build, machine, workload, sample count, clock, and timestamp; preserve historical data separately.
 - [ ] Maintain a module/method-level engineering handbook after major API changes.
@@ -179,8 +180,9 @@
 
 ### E3. Visualization and analysis — medium impact
 
+- [ ] Complete the **release-facing GUI polish and correctness work in Section F** before capturing definitive screenshots or demos.
 - [ ] Show truth versus estimated states clearly; never label copied truth as a measured navigation estimate.
-- [ ] Add controller-latency distribution, command age, watchdog transitions, and serial queue depth to the HIL Monitor.
+- [ ] Add controller-latency distribution, command age, watchdog transitions, and serial queue depth to the HIL Monitor without confusing response latency with simulation computation time.
 - [ ] Provide standardized figure exports (trajectory, altitude, angular rates, commanded/applied moments, error bands).
 - [ ] Add controlled trajectory sampling and export to avoid mistaking bounded latest-snapshot GUI history for complete telemetry recording.
 - [ ] Measure simulation-to-display latency separately from GUI frame time and numerical execution time.
@@ -191,6 +193,90 @@
 - [ ] Compare single-thread, worker-thread, and event-driven designs on measurable workloads before changing threading architecture.
 - [ ] Explore parallel independent Monte Carlo trials only after confirming deterministic per-trial seeds and reproducible aggregation.
 - [ ] Consider binary telemetry or columnar export only if CSV is demonstrably a bottleneck.
+
+## F. GUI clarity, plotting correctness, and portfolio demonstrations
+
+> **Motivation:** The current Dear ImGui / ImPlot interface exposes working flight plots, playback, performance metrics, and HIL status. Screenshots nevertheless show narrow side panels, clipped or crowded labels, considerable unused space, a hidden-by-default Vehicle 3D view, and a large floating HIL Monitor covering other panels. These are usability and presentation opportunities, **not evidence that the physics engine is incorrect**. Keep the tested simulation/HIL subsystems unchanged unless an independently reproduced defect requires a fix.
+>
+> **Evidence caution:** Screenshot data from `visualization_demo_SYNTHETIC.csv` is synthetic and must be labeled as such. The physical HIL screenshot showed `RUNNING` serial worker but `WAITING` watchdog and **zero accepted commands**; do not portray that particular capture as a healthy closed-loop hardware demonstration. Seek a new, genuinely healthy capture after investigating its cause. The plots' peculiar ranges are observed symptoms that require inspection, not confirmed timestamping bugs.
+
+### F1. Investigate HIL plot ranges and live-time behavior — release-critical
+
+- [ ] Reproduce the HIL Monitor case where the X axes span roughly **0.01–0.03 seconds** while the monitor reports **hundreds of steps**. Inspect the actual stored telemetry timestamps, ring-buffer retention, units, ImPlot axis limits, and auto-fit behavior before changing code.
+- [ ] Check that **simulation time in seconds** is consistently used on X axes; verify whether any values are mistakenly interpreted as milliseconds, indices, recent-sample offsets, or fixed initial limits.
+- [ ] Verify that plots in live 6DOF mode advance as samples arrive, with an appropriate moving/auto-fit window and a way to inspect complete recorded history when available.
+- [ ] Fix or make configurable the case where live telemetry occupies only the beginning of a fixed **30-second** horizontal range during a short live run; do not force automatic zoom in recorded playback when a user has selected a deliberate range.
+- [ ] Validate empty buffers, the first sample, a long-running stream, source changes, simulation restarts, and out-of-order/duplicate timestamps without frozen axes or crashes.
+- [ ] Make minuscule execution and communication latencies legible with meaningful units and auto-scaled Y axes. Do not use a common 10–25 ms Y scale when actual observations are microseconds, unless that comparison is intentional and clearly labeled.
+- [ ] Distinguish per-step **computation duration**, start-time **scheduler lateness**, controller **round-trip response latency**, and **USB/serial** transport effects; show only instrumented metrics and accurately label them.
+
+**Done when:** the displayed axes match actual sampled timestamps and value magnitudes in software and physical HIL, the latest point is visibly advancing during live runs, and recorded playback preserves usable navigation/zoom behavior. Capture before/after screenshots and existing telemetry evidence.
+
+### F2. Introduce task-specific docked layouts — high impact before demos
+
+- [ ] Keep **Dear ImGui docking** and existing rendering architecture; avoid rebuilding the GUI or adding a second GUI framework solely for appearance.
+- [ ] Create or refine default workspaces named **Flight Overview**, **GNC Analysis**, **Software HIL**, and **Hardware HIL** using existing panel infrastructure.
+- [ ] Make **Vehicle 3D visible alongside Trajectory** in the Flight Overview rather than hidden behind an inactive tab. Retain a resizeable arrangement suitable for typical laptop and desktop displays.
+- [ ] Give software and hardware HIL a dedicated **dockable monitor workspace**, not a near-full-screen floating overlay. Preserve the ability to detach or maximize it when desired.
+- [ ] Avoid allocating large default areas to an empty Events panel or disabled Playback controls. Allow users to show or hide these panels without losing access to functionality.
+- [ ] Provide **Reset Layout** and remember intentional user adjustments without making new users inherit a confusing local layout.
+- [ ] Verify presentation at normal Windows scaling and at 125%/150% DPI, including window resizing and a smaller display. Confirm no clipping, overdraw, or inaccessible controls.
+
+**Done when:** opening the application or selecting a workspace reveals the most relevant 3D/plot/health information immediately, with no obscured principal panel and no need for extensive manual rearrangement.
+
+### F3. Replace cramped text readouts with a readable flight summary — high impact
+
+- [ ] Present clearly labeled, aligned values for **simulation time, source/mode, altitude, speed, orientation, angular rates, and active/paused state**, as supported by the actual telemetry.
+- [ ] Use compact numerical readouts for key metrics with explicit units; retain full-precision details in an expandable diagnostics view or tooltip.
+- [ ] Fix current Dashboard and Performance panel truncation, long line wrapping, horizontal crowding, and overlapping header/status elements.
+- [ ] Use consistent section hierarchy, padding, font sizes, numeric precision, and contrast; preserve technical precision without forcing users to read dense, tiny monospace paragraphs.
+- [ ] Treat **recorded**, **synthetic live**, **physics-driven live**, **software HIL**, and **physical HIL** as visibly distinct data sources. Never imply that a synthetic test file or copied truth state is a measured estimator result.
+- [ ] Clearly indicate absent instrumentation (for example, `not measured`) rather than reporting a misleading zero.
+
+**Done when:** all essential values can be read at a glance in a normal window size and a screenshot makes the active simulation mode and measured data provenance unambiguous.
+
+### F4. Reorganize HIL status and health reporting — high impact before demos
+
+- [ ] Add a compact top-line status grouping for **transport type**, **COM port/baud** when physical, **serial worker**, **watchdog**, and **effective control authority**.
+- [ ] Surface **simulation-step count/rate**, queued/dropped sensor samples, accepted/rejected responses, accepted-response ratio, valid-held-control steps, zero-command fallback steps, and deadline misses when available.
+- [ ] Show the **age of the last accepted command** and differentiate `WAITING`, `HEALTHY`, `TIMED_OUT`, disconnected, and fault conditions. Define exact displayed states from source rather than inventing state names.
+- [ ] Group plots by **simulation execution**, **communications processing**, **response latency**, and eventually **commanded versus applied body moments**; include units and measured sample counts.
+- [ ] Investigate the actual hardware screenshot where the serial worker was `RUNNING` but the watchdog remained `WAITING`, accepted commands stayed at **0**, and dropped/queued counts rose. Verify firmware baud compatibility, firmware start/reset behavior, transport RX/TX counts, framing, and sequence validation before using it as a portfolio demo.
+- [ ] Ensure a healthy screenshot/video shows an actual **accepted-command count increasing**, valid applied moments, a healthy watchdog, and zero fallback only when valid. Do not claim that the command rate equals 100 Hz unless measured.
+- [ ] Make controller disconnection, fault, and stop transitions visually clear while testing the **applied command** and not only the status label.
+
+**Done when:** a reviewer can tell in seconds whether the physics loop is running, the external controller is responding, commands are valid, and the simulation is applying them safely. Screenshots must be supported by benchmark logs or a reproducible demo run.
+
+### F5. Prepare reproducible, honest demo scenarios — high impact before release
+
+- [ ] Provide a **real RK4-driven 6DOF recorded/live demonstration** showing visible vehicle rotation, trajectory evolution, and synchronized telemetry. Prefer it over the synthetic CSV for the main GitHub showcase.
+- [ ] Use a clear, modestly interesting physically justified motion example; do not fabricate a guided powered-rocket ascent or autonomous controller capabilities that are not integrated and verified.
+- [ ] Prepare a software HIL closed-loop example with a visible angular-rate decay or other measurable control effect, corresponding commanded/applied moments, a readable response count, and no misleading synthetic labels.
+- [ ] Prepare a physical ESP32 HIL example with the board and GUI visible, **matching 460800 baud firmware and host settings** where applicable, accepted commands increasing, and telemetry/command age accurately displayed.
+- [ ] Record a fault/disconnection sequence **only with no actuators attached and after the manual safety procedure has passed**, including a visible transition to fallback zero and a new-session recovery.
+- [ ] Capture a small set of stills: **Flight Overview**, **Vehicle 3D / trajectory**, **Software HIL health**, **Physical HIL healthy**, and **verification/performance evidence**. Annotate what is simulated, measured, synthetic, or hardware-derived.
+- [ ] Keep source/configuration, build revision, hardware, and reproducible steps near each demo asset; use short captions and avoid screenshots containing personal paths or sensitive local configuration.
+
+**Done when:** a viewer can reproduce each demo and understand what is real physics, what is simulated controller behavior, what is physical hardware integration, and what performance claims are actually supported.
+
+### F6. Visual consistency and usability details — medium impact
+
+- [ ] Refine the existing dark theme with consistent spacing, panel borders, axis-label legibility, legends, plot colors, and modest visual hierarchy; prioritize accessibility and clarity over decorative effects.
+- [ ] Apply consistent plot colors to **truth**, **estimate**, **command**, and **applied output**, using readable legends and color-independent labels when feasible.
+- [ ] Provide intentional defaults for visible channels, legend placement, scroll/zoom behavior, and an optional **follow-live** mode.
+- [ ] Add explanatory tooltips for technical metrics (for example, `deadline miss`, `response latency`, `estimated state`, `watchdog`) so a new evaluator can interpret the data without reading source code.
+- [ ] Keep keyboard/mouse controls predictable; audit layout persistence and cleanup on close/restart.
+
+### F7. Advanced visualization — optional research after release
+
+- [ ] Replace or complement the wireframe with an optional higher-quality 3D rocket mesh while retaining a low-cost engineering wireframe mode.
+- [ ] Add orbit, follow, chase, and body-fixed camera views only when the required transform and camera behavior are tested.
+- [ ] Display optional force, moment, velocity, angular-rate, and actuator vectors with properly labeled reference frames and scales.
+- [ ] Add vehicle thrust and actuator motion animation driven by real simulation values, not arbitrary decorative movement.
+- [ ] Provide a flight-event timeline for ignition, burnout, coast, apogee, faults, and recovery **only for events the integrated scenario actually produces**.
+- [ ] Compare nominal versus fault-injected runs with side-by-side plots, matched time axes, and clearly distinguished random seeds/configurations.
+
+**Boundary:** these additions are future presentation/research features, not prerequisites for publishing a correct simulation library. Do not sacrifice determinism, measurement integrity, or HIL safety to make the interface more cinematic.
 
 ## Work selection template
 
@@ -204,13 +290,22 @@ For each chosen item, record:
 6. **Validation:** existing tests to rerun, new targeted coverage only for genuine gaps, and hardware/manual checks when appropriate.
 7. **Result:** measured before/after, regressions, limitations, and next follow-up.
 
-## Recommended order after the initial release
+## Recommended execution order
 
-1. Prove outstanding physical disconnect/recovery behavior and stabilize CI/release packaging, if not completed.
-2. Finish the guided-rocket end-to-end integrated reference mission and corresponding validation.
-3. Add more precise physical HIL instrumentation and diagnose the current throughput bottleneck.
-4. Demonstrate delayed-control behavior and improve the HIL pipeline only where measured benefit warrants it.
-5. Expand estimation/GNC comparisons, realistic uncertainty, and Monte Carlo experiments.
-6. Improve portability, configuration, visualization evidence, and optional high-fidelity models.
+### Before final screenshots and the initial release
+
+1. Confirm any outstanding physical disconnect/recovery safety behavior (**A1**); do not release a physical HIL demonstration that has not passed its safety review.
+2. Check and correct observable GUI plot/time-axis issues (**F1**) and inspect the hardware HIL monitor's zero-accepted-command capture (**F4**).
+3. Improve docking, default workspaces, the Vehicle 3D/Trajectory arrangement, readable metrics, and data-source labeling (**F2–F4**).
+4. Prepare and record an honestly labeled, reproducible 6DOF/Software HIL/physical HIL showcase (**F5**); add screenshots/links to documentation (**A5**).
+5. Finish packaging/license/dependency validation and review the draft GitHub release (**A3**). Keep proven CI and code-quality results documented (**A2**, **A4**).
+
+### After the initial release
+
+1. Finish the guided-rocket end-to-end integrated reference mission and corresponding validation (**C1**).
+2. Add more precise physical HIL instrumentation and diagnose the current throughput bottleneck (**B1**).
+3. Demonstrate delayed-control behavior and improve the HIL pipeline only where measured benefit warrants it (**B2–B4**).
+4. Expand estimation/GNC comparisons, realistic uncertainty, and Monte Carlo experiments (**C2–C3**, **D**).
+5. Improve portability, versioned configuration, observability, and detailed visual presentation (**E**, **F6–F7**).
 
 **Non-goals:** hardware actuation or real-flight deployment without a dedicated safety design and appropriate engineering review; invented performance guarantees; adding multiple alternative frameworks that solve no measured problem; rewriting validated components purely for novelty.
