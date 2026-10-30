@@ -1,0 +1,48 @@
+name: ESP32 Firmware Build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'firmware/**'
+      - '.github/workflows/firmware.yml'
+  pull_request:
+    paths:
+      - 'firmware/**'
+      - '.github/workflows/firmware.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  firmware:
+    name: ESP32 / ESP-IDF v6.1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Build original ESP32 firmware
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v6.1
+          target: esp32
+          path: firmware/esp32s3
+
+      - name: Upload firmware images
+        uses: actions/upload-artifact@v6
+        with:
+          name: aeroforge-esp32-firmware
+          path: |
+            firmware/esp32s3/build/*.bin
+            firmware/esp32s3/build/bootloader/*.bin
+            firmware/esp32s3/build/partition_table/*.bin
+            firmware/esp32s3/build/flash_args
+            firmware/esp32s3/build/flasher_args.json
+          if-no-files-found: error
+          retention-days: 14

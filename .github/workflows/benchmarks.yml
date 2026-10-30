@@ -1,0 +1,74 @@
+name: Software HIL Benchmarks
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    name: Software HIL / Windows x64
+    runs-on: windows-2022
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Configure Release build
+        shell: pwsh
+        run: |
+          cmake -S . -B build -G "Visual Studio 17 2022" -A x64 `
+            -DAEROFORGE_BUILD_VISUALIZATION=OFF `
+            -DBUILD_TESTING=ON
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Build existing benchmark and auditor
+        shell: pwsh
+        run: |
+          cmake --build build --config Release --parallel 4 `
+            --target AeroForgeHilBenchmarks AeroForgeVerificationAudit
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Execute and audit software HIL workloads
+        shell: pwsh
+        run: |
+          $benchmark = Get-ChildItem build -Recurse -Filter AeroForgeHilBenchmarks.exe |
+            Where-Object { $_.DirectoryName -match '[\\/]Release$' } |
+            Select-Object -First 1 -ExpandProperty FullName
+          $auditor = Get-ChildItem build -Recurse -Filter AeroForgeVerificationAudit.exe |
+            Where-Object { $_.DirectoryName -match '[\\/]Release$' } |
+            Select-Object -First 1 -ExpandProperty FullName
+          if (-not $benchmark -or -not $auditor) {
+            throw 'Required executables were not found.'
+          }
+
+          & $benchmark 100000 out/verification/software-unpaced
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          & $benchmark 10000 out/verification/software-paced paced
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          & $auditor software `
+            out/verification/software-unpaced/hil_samples.csv `
+            out/verification/software-unpaced/hil_summary.json `
+            out/verification/SoftwareAudit.md
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          & $auditor software `
+            out/verification/software-paced/hil_samples.csv `
+            out/verification/software-paced/hil_summary.json `
+            out/verification/SoftwarePacedAudit.md
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Upload benchmark evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: software-hil-verification
+          path: out/verification/
+          if-no-files-found: warn
+          retention-days: 30

@@ -1,5 +1,4 @@
-﻿
-cmake_minimum_required(VERSION 3.20)
+﻿cmake_minimum_required(VERSION 3.20)
 
 project(
     AeroForge
@@ -35,6 +34,22 @@ add_library(AeroForgeCore
     src/simulation/RealtimeSimulationRunner.cpp
 
     src/hil/LoopbackTransport.cpp
+    src/hil/HilSerializer.cpp
+    src/hil/HilCobs.cpp
+    src/hil/HilStreamParser.cpp
+    src/hil/HilCrc32.cpp
+    src/hil/HilPacketCodec.cpp
+    src/hil/HilSequenceTracker.cpp
+    src/hil/HilWireEndpoint.cpp
+    src/hil/HilSimulationBridge.cpp
+    src/hil/HilClosedLoopStep.cpp
+    src/hil/HilSoftwareController.cpp
+    src/hil/HilCommandWatchdog.cpp
+    src/hil/HilTimingMonitor.cpp
+    src/hil/WindowsSerialTransport.cpp
+    src/hil/HilSerialWorker.cpp
+    src/hil/HilMonitoredRun.cpp
+    src/hil/HilTelemetryStore.cpp
 
     src/dynamics/TranslationalState.cpp
     src/dynamics/ForceAccumulator.cpp
@@ -184,6 +199,35 @@ else()
     )
 endif()
 
+add_executable(AeroForgeHilDemo
+    examples/HilSoftwareClosedLoopDemo.cpp
+)
+
+target_link_libraries(AeroForgeHilDemo
+    PRIVATE AeroForgeCore
+)
+
+add_executable(AeroForgeHilBenchmarks
+    benchmarks/hil/HilBenchmarks.cpp
+)
+
+target_link_libraries(AeroForgeHilBenchmarks
+    PRIVATE AeroForgeCore
+)
+
+target_compile_features(AeroForgeHilBenchmarks
+    PRIVATE cxx_std_20
+)
+
+add_executable(AeroForgeVerificationAudit
+    tools/verification/AeroForgeVerificationAudit.cpp
+)
+
+target_compile_features(AeroForgeVerificationAudit
+    PRIVATE cxx_std_20
+)
+
+
 #
 # Optional graphical visualization application
 #
@@ -315,6 +359,9 @@ if(AEROFORGE_BUILD_VISUALIZATION)
         src/visualization/gui/panels/PerformancePanel.h
         src/visualization/gui/panels/PerformancePanel.cpp
 
+        src/visualization/gui/panels/HilDashboardPanel.h
+        src/visualization/gui/panels/HilDashboardPanel.cpp
+
         #
         # Rendering
         #
@@ -368,6 +415,8 @@ endif()
 #
 add_subdirectory(benchmarks)
 add_subdirectory(examples)
+
+include(cmake/HilHardware.cmake)
 
 #
 # Debug symbols for Release profiling on MSVC

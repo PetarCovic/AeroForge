@@ -1,0 +1,89 @@
+name: Draft Windows Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build, verify, and draft release
+    runs-on: windows-2022
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out release tag
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Configure Release build
+        shell: pwsh
+        run: |
+          cmake -S . -B build -G "Visual Studio 17 2022" -A x64 `
+            -DAEROFORGE_BUILD_VISUALIZATION=ON `
+            -DBUILD_TESTING=ON
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Build all targets
+        shell: pwsh
+        run: |
+          cmake --build build --config Release --parallel 4
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Run regression suite
+        shell: pwsh
+        run: |
+          ctest --test-dir build -C Release --output-on-failure
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Stage release package
+        shell: pwsh
+        run: |
+          $destination = 'dist/AeroForge'
+          New-Item -ItemType Directory -Path $destination -Force | Out-Null
+
+          $required = @(
+            'AeroForge.exe',
+            'AeroForgeVisualizer.exe',
+            'AeroForgeHilBenchmarks.exe',
+            'AeroForgeHilHardwareBenchmarks.exe',
+            'AeroForgeVerificationAudit.exe'
+          )
+
+          foreach ($name in $required) {
+            $source = Get-ChildItem build -Recurse -Filter $name |
+              Where-Object { $_.DirectoryName -match '[\\/]Release$' } |
+              Select-Object -First 1 -ExpandProperty FullName
+
+            if (-not $source) {
+              throw "Required release executable missing: $name"
+            }
+
+            Copy-Item $source -Destination $destination
+          }
+
+          Copy-Item README.md -Destination $destination
+          Copy-Item docs/INSTALL_AND_VALIDATION.md -Destination $destination
+
+          if (Test-Path LICENSE) {
+            Copy-Item LICENSE -Destination $destination
+          }
+
+          Compress-Archive -Path "$destination/*" `
+            -DestinationPath 'dist/AeroForge-windows-x64.zip' -Force
+
+      - name: Create draft GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$env:GITHUB_REF_NAME" `
+            'dist/AeroForge-windows-x64.zip' `
+            --verify-tag `
+            --draft `
+            --title "AeroForge $env:GITHUB_REF_NAME" `
+            --generate-notes

@@ -1,0 +1,79 @@
+name: Windows Build and Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Windows x64 / ${{ matrix.variant }}
+    runs-on: windows-2022
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: headless
+            visualization: 'OFF'
+          - variant: desktop
+            visualization: 'ON'
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Configure Release build
+        shell: pwsh
+        run: |
+          cmake -S . -B build -G "Visual Studio 17 2022" -A x64 `
+            -DAEROFORGE_BUILD_VISUALIZATION=${{ matrix.visualization }} `
+            -DBUILD_TESTING=ON
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Build all targets
+        shell: pwsh
+        run: |
+          cmake --build build --config Release --parallel 4
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Run existing regression suite
+        shell: pwsh
+        run: |
+          ctest --test-dir build -C Release --output-on-failure
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Upload CTest logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ctest-logs-${{ matrix.variant }}
+          path: |
+            build/Testing/Temporary/LastTest.log
+            build/Testing/Temporary/LastTestsFailed.log
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload desktop executables
+        if: matrix.variant == 'desktop'
+        uses: actions/upload-artifact@v6
+        with:
+          name: aeroforge-windows-x64
+          path: |
+            build/**/Release/AeroForge.exe
+            build/**/Release/AeroForgeVisualizer.exe
+            build/**/Release/AeroForgeHilBenchmarks.exe
+            build/**/Release/AeroForgeHilHardwareBenchmarks.exe
+            build/**/Release/AeroForgeVerificationAudit.exe
+          if-no-files-found: error
+          retention-days: 14

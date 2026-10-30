@@ -28,6 +28,26 @@ add_executable(
     simulation/RealtimeSimulationRunnerTests.cpp
 
     hil/LoopbackTransportTests.cpp
+    hil/HilSerializerTests.cpp
+    hil/HilTypedSerializerTests.cpp
+    hil/HilCobsTests.cpp
+    hil/HilCrc32Tests.cpp
+    hil/HilPacketCodecTests.cpp
+    hil/HilStreamParserTests.cpp
+    hil/HilSequenceTrackerTests.cpp
+    hil/HilWireEndpointTests.cpp
+    hil/HilSimulationBridgeTests.cpp
+    hil/HilSoftwareControllerTests.cpp
+    hil/HilClosedLoopIntegrationTests.cpp
+    hil/HilCommandWatchdogTests.cpp
+    hil/HilTimingMonitorTests.cpp
+    hil/HilTimingIntegrationTests.cpp
+    hil/HilSerialWorkerTests.cpp
+    hil/WindowsSerialTransportTests.cpp
+    hil/HilSerialIntegrationTests.cpp
+    hil/HilMonitoredRunTests.cpp
+    hil/HilTelemetryStoreTests.cpp
+    hil/HilHardwareRunTests.cpp
 
     dynamics/TranslationalStateTests.cpp
     dynamics/ForceAccumulatorTests.cpp

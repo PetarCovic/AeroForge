@@ -1,0 +1,10 @@
+menu "AeroForge HIL Controller"
+
+    config AEROFORGE_HIL_UART_BAUD
+        int "Binary HIL UART baud rate"
+        range 9600 2000000
+        default 115200
+        help
+            Both the ESP32 firmware and AeroForge host must use the same rate.
+
+endmenu

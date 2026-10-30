@@ -1,735 +1,336 @@
-
 # AeroForge
 
-**C++20 six-degree-of-freedom (6DOF) aerospace simulation and guidance, navigation, and control (GNC) platform.**
+**A C++20 six-degree-of-freedom (6DOF) aerospace simulation, guidance, navigation, and control (GNC), visualization, and hardware-in-the-loop platform.**
 
-AeroForge is a modular aerospace engineering platform for studying rigid-body flight dynamics, numerical integration, atmospheric and aerodynamic modeling, rocket propulsion, aerospace sensors, navigation, attitude control, stochastic failures, reproducible experiments, simulation performance, and interactive flight visualization.
+AeroForge is a modular engineering project for simulating rigid-body motion, numerical integration, atmosphere and aerodynamics, rocket propulsion, sensors, navigation, guidance, control, actuators, faults, and repeatable experiments. It includes a desktop visualization application and both software and physical-controller hardware-in-the-loop (HIL) execution.
 
-Its reference application is a guided research rocket, but the underlying mathematics, simulation infrastructure, and visualization components are designed to be reusable across different aerospace systems.
+The **guided research rocket** is the platform's reference mission, not the limit of its intended architecture. AeroForge's components are designed for reuse across different aerospace vehicle models.
 
-> **Development status:** AeroForge includes implemented mathematical, dynamics, simulation, rocket, sensor, navigation, control, telemetry, and performance subsystems. Phase 17 adds an interactive visualization application supporting recorded telemetry playback and physics-driven live 6DOF simulation. These features have been built and exercised locally, with the automated regression suite reported passing.
+> **Project status:** The core simulation, 6DOF dynamics, supporting aerospace models, live visualization, software HIL, and physical ESP32 HIL have been implemented and exercised locally. The automated regression suite was reported passing after hardware HIL integration. Software HIL benchmark evidence and physical HIL benchmark evidence have passed internal-consistency audits. The full guided-rocket reference mission and manual hardware disconnect/recovery sign-off are **not** claimed as complete.
 >
-> The complete, integrated guided-rocket reference mission remains a development goal. Implemented components and passing tests should not be interpreted as validation of a complete operational flight-control system.
->
-> Phase 17 visualization changes are being finalized locally and may not yet be present in the remote repository.
+> **Timing distinction:** The physical HIL simulation maintained a tested 100 Hz physics schedule, but the ESP32 did **not** provide a new controller response on every physics step. See [measured HIL results](docs/performance/HilPerformanceReport.md).
 
----
+## Highlights
 
-## Features
+- **6DOF simulation:** Translational and rotational rigid-body dynamics with quaternion attitude, numerical integration, forces, moments, mass, and inertia.
+- **Aerospace models:** Standard atmosphere, wind, aerodynamics, rocket thrust, propellant depletion, and time-varying mass properties.
+- **GNC and experiment infrastructure:** IMU/GPS models, inertial navigation, GPS correction, attitude control, actuator models, injected faults, Monte Carlo analysis, and seeded replay.
+- **Interactive visualizer:** Recorded CSV playback, live physics, telemetry plots, trajectories, 3D vehicle attitude, events, performance diagnostics, and HIL monitoring.
+- **Software and physical HIL:** Versioned binary sensor/control exchange with COBS framing, CRC-32, sequence validation, command freshness tracking, and watchdog fallback; a physical ESP32 communicates over USB-to-UART.
+- **Engineering evidence:** GoogleTest/CTest regression coverage, analytical/integration tests, timed benchmarks, and a C++ tool for auditing saved benchmark evidence.
 
-### Implemented Subsystems
+## Measured results
 
-| Subsystem | Included functionality |
-|---|---|
-| Mathematics | `Vector3`, `Matrix`, `Quaternion`, geometry, and coordinate-frame transformations |
-| Simulation | State and derivative abstractions, dynamics/integrator interfaces, Euler and RK4 integration, simulation clock, and simulation runner |
-| Dynamics | Translational, rotational, and rigid-body 6DOF models; force and moment accumulation |
-| Environment and aerodynamics | Standard atmosphere, wind, relative air velocity, air data, and aerodynamic modeling |
-| Rocket modeling | Thrust curves, propulsion, propellant depletion, variable mass/inertia, and rocket dynamics |
-| Sensors | Accelerometer, gyroscope, IMU, GPS, sensor timing, and measurement models |
-| Navigation | Inertial navigation, GPS correction, and navigation-state propagation |
-| Guidance and control | Attitude setpoints, hold-attitude guidance, PD attitude control, and control commands |
-| Actuation | Throttle, gimbal, and body-moment actuator models |
-| Robustness | Fault injection, Monte Carlo trials/statistics, seed management, and deterministic replay tests |
-| Telemetry and analysis | Telemetry recording, sampling, CSV export, event annotations, flight/GNC analysis, and Monte Carlo reports |
-| Execution and profiling | Real-time pacing, execution results, timing summaries, performance benchmarks, and regression testing |
-| Visualization | CSV playback, interactive telemetry plots, 2D trajectories, 3D vehicle attitude, live telemetry, events, and GUI performance diagnostics |
-| Live 6DOF integration | RK4-integrated rigid-body simulation running on a worker thread with thread-safe snapshot publishing |
+Recent measurements from the Windows x64 Release configuration are summarized below. These are observations from the recorded workloads, **not guarantees** for other hardware or configurations.
 
-**Implementation versus integration:** Individual subsystem implementations and their tests do not establish full end-to-end flight-system validation. The [reference mission](docs/REFERENCE_MISSION.md) defines the broader intended application.
+| Workload | Steps | Accepted controller responses | Relevant result |
+|---|---:|---:|---|
+| Software HIL, unpaced | 100,000 | 100,000 | Mean step computation **0.00497655 ms**; zero execution deadline misses |
+| Software HIL, paced at 100 Hz | 10,000 | 10,000 | **0** execution/completion deadline misses; **0.1618 ms** p99 start lateness |
+| Physical ESP32 HIL, 460800 baud, 100 Hz physics | 1,000 | 641 | **997/1,000** steps had a still-valid command; mean controller response **15.5717 ms**; zero observed simulation deadline misses |
 
----
+The physical run reported **`HARDWARE ACCEPTANCE THRESHOLD NOT MET`** against its 90% fresh-response criterion. The physics runner can retain an earlier command while it remains valid; its high valid-command coverage does not mean a new command arrived every 10 ms. The physical benchmark's CSV/JSON **evidence audit passed with a warning**, which does not override the benchmark's performance result.
+
+See [current verification results](docs/verification/CurrentVerificationResults.md), [HIL performance report](docs/performance/HilPerformanceReport.md), and [benchmark methodology](docs/BENCHMARKING_AND_PERFORMANCE.md).
 
 ## Architecture
 
-AeroForge separates physical models, numerical integration, simulation execution, telemetry, and visualization.
-
 ```text
-AeroForge
-|
-+-- Mathematics
-|   +-- Vector and matrix operations
-|   +-- Quaternion attitude representation
-|   +-- Coordinate transformations
-|
-+-- Simulation
-|   +-- State and StateDerivative
-|   +-- DynamicsModel interface
-|   +-- Euler and RK4 integrators
-|   +-- SimulationRunner
-|   +-- Real-time execution
-|
-+-- Aerospace Models
-|   +-- Translational and rotational dynamics
-|   +-- Rigid-body 6DOF dynamics
-|   +-- Atmospheric and aerodynamic models
-|   +-- Rocket engines and propellant
-|   +-- Variable mass and inertia
-|
-+-- Guidance, Navigation, and Control
-|   +-- Sensor models
-|   +-- Navigation algorithms
-|   +-- Attitude guidance
-|   +-- PD control
-|   +-- Actuator models
-|
-+-- Experiment Infrastructure
-|   +-- Fault injection
-|   +-- Monte Carlo simulation
-|   +-- Reproducibility
-|   +-- Telemetry recording
-|   +-- Performance benchmarking
-|
-+-- Visualization
-    +-- CSV telemetry loading
-    +-- Recorded playback
-    +-- Live telemetry publishing
-    +-- 2D trajectory plots
-    +-- 3D vehicle wireframe
-    +-- GUI telemetry and event panels
-    +-- Physics-driven live 6DOF demonstration
+                          AeroForge
+                              |
+             +----------------+----------------+
+             |                |                |
+       Simulation Core     Aerospace        Experiment
+             |             Models          Infrastructure
+       +-----+-----+      +---+----+       +-----+------+
+       |           |      |        |       |            |
+    Math /       6DOF   Atmosphere Rocket  Faults /    Telemetry /
+    Frames     Dynamics  / Aero     / Mass   Monte Carlo Replay
+       |           |      |        |       |            |
+       +-----------+------+--------+-------+------------+
+                              |
+                         GNC / Actuators
+                              |
+                     Simulation State / Clock
+                              |
+                  +-----------+-----------+
+                  |                       |
+             Visualization               HIL
+                  |                       |
+        Recorded and Live GUI     Software loopback
+                                  or ESP32 over UART
 ```
 
-### Design Principles
+Core models and numerical integration do not depend on the GUI. Simulation time is authoritative for physics; pacing and serial response timing are measured separately using host wall-clock time. The rendering thread consumes published state rather than advancing the simulation itself.
 
-AeroForge follows several core architectural principles:
+### Subsystems
 
-- **Separation of concerns:** Physical dynamics are independent of numerical integrators and rendering.
-- **Deterministic simulation:** Simulation time is authoritative; wall-clock pacing is handled separately.
-- **Reusable components:** Mathematical and simulation abstractions are not tied to one rocket configuration.
-- **Explicit coordinate conventions:** Position, velocity, orientation, and angular velocity have documented frames.
-- **Testability:** Subsystems can be validated independently using analytical, integration, and regression tests.
-- **Performance awareness:** Numerical and execution workloads are benchmarked using measured results.
-- **Visualization isolation:** Rendering does not directly control the physics integrator.
-
-See [System Architecture](docs/SYSTEM_ARCHITECTURE.md) for additional details.
-
----
-
-## Coordinate and Numerical Conventions
-
-AeroForge uses the following conventions:
-
-| Property | Convention |
+| Area | Included functionality |
 |---|---|
-| Navigation frame | Right-handed North-East-Down (NED) |
-| Navigation +X | North |
-| Navigation +Y | East |
-| Navigation +Z | Down |
-| Body frame | Right-handed Forward-Right-Down (FRD) |
-| Body +X | Forward, toward vehicle nose |
-| Body +Y | Right |
-| Body +Z | Down |
-| Attitude | Body-to-navigation quaternion `q_NB` |
-| Quaternion storage | Scalar-first `[w, x, y, z]` |
-| Units | SI |
-| Internal angles | Radians |
-| Physical numerical precision | `double` |
-| Authoritative simulation time | Simulation clock |
+| Mathematics and geometry | `Vector3`, `Matrix`, `Quaternion`, transforms and coordinate-frame conversion |
+| Numerical simulation | State/derivative models, Euler and RK4 integrators, simulation clock, fixed-step and paced runners |
+| Dynamics | Translational, rotational, and 6DOF rigid-body models; accumulated forces and moments |
+| Environment and aerodynamics | Atmosphere, wind, relative air velocity, air data, and aerodynamic force/moment models |
+| Rocket propulsion | Thrust curves, engine, propellant depletion, mass/inertia variation, and rocket dynamics |
+| Sensors and navigation | Accelerometer, gyroscope, IMU, GPS, sensor schedules, inertial navigation, GPS correction |
+| Guidance and actuation | Attitude guidance, PD control, throttle, gimbal, body-moment actuator models |
+| Experimentation | Fault schedules/injectors, Monte Carlo trials/statistics, seeded reproducibility and replay |
+| Data and analysis | Telemetry recording, CSV export, event logs, flight/GNC analysis, benchmarking |
+| Visualization | GLFW/OpenGL/Dear ImGui/ImPlot GUI; recorded and live data; trajectories; 3D attitude |
+| Hardware-in-the-loop | Packet codec, stream parser, serial worker, HIL bridge, watchdog, timing monitor, and ESP32 firmware |
 
-The baseline 6DOF rigid-body state contains 13 components:
+For an implementation-focused map, see [Current Implementation](docs/architecture/CurrentImplementation.md). The longer [System Architecture](docs/SYSTEM_ARCHITECTURE.md) describes the engineering design contract, including some forward-looking requirements.
 
-| State indices | Quantity | Reference frame |
+## Physical conventions
+
+AeroForge's baseline rigid-body state is a **13-component** representation:
+
+| Indices | Quantity | Frame / representation |
 |---|---|---|
-| 0–2 | Position | Navigation |
-| 3–5 | Velocity | Navigation |
-| 6–9 | Attitude quaternion | Body to navigation |
-| 10–12 | Angular velocity | Body |
+| 0–2 | Position | Local navigation, North-East-Down (NED) |
+| 3–5 | Velocity | NED |
+| 6–9 | Attitude | Scalar-first body-to-navigation quaternion `q_NB` (`w, x, y, z`) |
+| 10–12 | Angular velocity | Forward-Right-Down (FRD) body frame |
 
-The attitude quaternion transforms vectors from body coordinates into navigation coordinates.
+Physical calculations use SI units, radians for internal angles, and `double` precision in the core physics models. With the navigation origin at the reference ground plane, altitude is `-z_N`. A vertical rocket's body-forward axis should not be confused with the navigation-frame North axis.
 
-For altitude relative to the local NED origin:
+The conventions are specified in [Coordinate Systems](docs/COORDINATE_SYSTEMS.md), [Units and Conventions](docs/UNITS_AND_CONVENTIONS.md), and [Simulation Scope and Assumptions](docs/SIMULATION_SCOPE_AND_ASSUMPTIONS.md).
 
-\[
-h = -z_N
-\]
+## Quick start: build and test
 
-The rocket's body-forward axis is not assumed to align with the navigation frame's North axis.
+### Requirements
 
-See:
+The demonstrated build environment is **Windows x64 with MSVC**, CMake, Ninja, and a C++20 toolchain. The visualization target requires an OpenGL-capable environment; CMake fetches or configures GLFW, Dear ImGui, and ImPlot. GoogleTest is used for automated testing. Initial dependency retrieval may require network access.
 
-- [Coordinate Systems](docs/COORDINATE_SYSTEMS.md)
-- [Units and Conventions](docs/UNITS_AND_CONVENTIONS.md)
-- [Simulation Scope and Assumptions](docs/SIMULATION_SCOPE_AND_ASSUMPTIONS.md)
+Other compiler/OS configurations are not claimed as verified by the measurements in this README.
 
----
+Open a PowerShell terminal with the x64 Visual Studio build environment configured and run these commands from the repository root.
 
-## Building AeroForge
-
-### Prerequisites
-
-The demonstrated development environment uses:
-
-- Windows
-- Visual Studio / Microsoft C++ compiler
-- C++20
-- CMake
-- Ninja
-- Git
-
-Building the graphical visualizer additionally requires its configured GLFW, OpenGL, Dear ImGui, and ImPlot dependencies.
-
-The testing configuration uses GoogleTest. An initial internet connection may be required when CMake fetches dependencies.
-
-The commands below use the tested Windows x64 CMake/Ninja workflow. Other operating systems and compiler configurations have not been established by the supplied validation evidence.
-
-### Configure a Release Build
-
-From the repository root, using PowerShell:
+### Configure
 
 ```powershell
 cmake -S . -B out/build/x64-release-clean -G Ninja -DCMAKE_BUILD_TYPE=Release -DAEROFORGE_BUILD_VISUALIZATION=ON -DBUILD_TESTING=ON
 ```
 
-Use an x64 MSVC development environment. The compiler and linker must target the same architecture.
-
-### Build All Targets
+### Build
 
 ```powershell
 cmake --build out/build/x64-release-clean --parallel 8
 ```
 
-### Run Automated Tests
+To build the principal test, GUI, and HIL targets explicitly:
+
+```powershell
+cmake --build out/build/x64-release-clean --target AeroForgeTests AeroForgeVisualizer AeroForgeHilBenchmarks AeroForgeHilHardwareBenchmarks AeroForgeVerificationAudit --parallel 8
+```
+
+### Run the automated tests
 
 ```powershell
 ctest --test-dir out/build/x64-release-clean --output-on-failure
 ```
 
-The automated regression suite has been reported passing following the Phase 17 live visualization changes.
+These commands use the target names registered by the recent local HIL/verification integration. Run `cmake --build out/build/x64-release-clean --target help` if your checked-out revision differs from that configuration.
 
-### Build Individual Targets
+For troubleshooting, a headless build option, and a longer verification checklist, see [Build, Installation, and Validation](docs/INSTALL_AND_VALIDATION.md).
 
-Core library:
+## Interactive visualization
 
-```powershell
-cmake --build out/build/x64-release-clean --target AeroForgeCore --parallel 8
-```
-
-Tests:
-
-```powershell
-cmake --build out/build/x64-release-clean --target AeroForgeTests --parallel 8
-```
-
-Visualization application:
-
-```powershell
-cmake --build out/build/x64-release-clean --target AeroForgeVisualizer --parallel 8
-```
-
-Visualization benchmarks:
-
-```powershell
-cmake --build out/build/x64-release-clean --target AeroForgeVisualizationBenchmarks --parallel 8
-```
-
-Recorded 6DOF example:
-
-```powershell
-cmake --build out/build/x64-release-clean --target AeroForge6DoFRecordingExample --parallel 8
-```
-
-Benchmarks measure execution performance; they do not replace correctness or physical validation testing.
-
-Do not compare Debug and Release benchmark results as if they were equivalent.
-
-### Optional Headless Build
-
-The visualization feature can be disabled when configuring a separate build:
-
-```powershell
-cmake -S . -B out/build/x64-headless -G Ninja -DCMAKE_BUILD_TYPE=Release -DAEROFORGE_BUILD_VISUALIZATION=OFF -DBUILD_TESTING=ON
-```
-
-Build:
-
-```powershell
-cmake --build out/build/x64-headless --parallel 8
-```
-
-Test:
-
-```powershell
-ctest --test-dir out/build/x64-headless --output-on-failure
-```
-
-This is an additional validation configuration. It should not be recorded as passing until independently executed successfully.
-
----
-
-## Interactive Flight Visualization
-
-Phase 17 introduces **AeroForge Visualizer**, a desktop visualization application built with GLFW, OpenGL, Dear ImGui, and ImPlot.
-
-The visualizer supports recorded telemetry, live simulation data, interactive engineering plots, and vehicle attitude visualization.
-
-### Visualization Panels
-
-| Panel | Functionality |
-|---|---|
-| Dashboard | Current flight state, simulation time, and selected telemetry source |
-| Playback | Playback controls, seeking, restarting, and playback speed |
-| Telemetry | Interactive time-series plots of simulation data |
-| Trajectory | North-East ground track and vertical flight profile |
-| Vehicle 3D | Wireframe vehicle with quaternion-driven 3D orientation |
-| Events | Time-stamped simulation and flight event annotations |
-| Performance | GUI frame-interval statistics, FPS, and retained telemetry information |
-
-Panels can be displayed, hidden, rearranged, and docked within the application.
-
-### Launch the Visualizer
+Launch the desktop application:
 
 ```powershell
 .\out\build\x64-release-clean\AeroForgeVisualizer.exe
 ```
 
-The visualizer supports three telemetry modes:
+The application supports these distinct data sources:
 
-1. Recorded telemetry playback
-2. Synthetic live demonstration
-3. Physics-driven live 6DOF simulation
+- **Recorded CSV playback:** Play, pause, seek, and inspect recorded telemetry and quaternion-based vehicle orientation.
+- **Synthetic live demonstration:** Procedurally generated telemetry used to exercise the GUI; it is not physics output.
+- **Physics-driven live 6DOF simulation:** A background C++ worker integrates the rigid-body model and publishes snapshots for the GUI.
+- **Software HIL:** A controller exchanges simulated sensor/control packets within the host process.
+- **Physical HIL:** The PC exchanges binary sensor/control packets with an external ESP32 over serial.
 
-### Recorded Flight Playback
+Available displays include the dashboard, telemetry plots, trajectory, 3D vehicle, events, performance diagnostics, and HIL monitor. Live GUI history is bounded; it is **not** a lossless recorder of every physics step.
 
-Select:
+For menu interactions, source switching, and appropriate physical-hardware configuration, read the [Visualizer User Guide](docs/visualization/VISUALIZATION_USER_GUIDE.md) and [Visualization Architecture](docs/visualization/VISUALIZATION_ARCHITECTURE.md).
 
-**File > Open telemetry CSV...**
+### Recorded 6DOF example
 
-Load an AeroForge-compatible telemetry recording.
-
-Supported playback interactions include:
-
-- Play and pause
-- Restart
-- Seek to a selected simulation time
-- Adjust playback speed
-- Inspect synchronized trajectory and telemetry
-- View recorded vehicle attitude
-
-The Vehicle 3D panel uses recorded body-to-navigation quaternions to orient the vehicle wireframe.
-
-The trajectory panel displays horizontal motion when horizontal position data is available. For altitude-only datasets, it can display the vertical profile without inventing horizontal motion.
-
----
-
-## Recorded 6DOF Simulation Example
-
-AeroForge includes a 6DOF example that generates calculated rigid-body flight telemetry.
-
-Source:
-
-`examples/rocket_6dof_flight.cpp`
-
-Executable target:
-
-`AeroForge6DoFRecordingExample`
-
-### Build the Example
+Build the existing recording example:
 
 ```powershell
 cmake --build out/build/x64-release-clean --target AeroForge6DoFRecordingExample --parallel 8
 ```
 
-### Generate Telemetry
-
-Create the output directory if necessary:
+Create a destination and run it:
 
 ```powershell
 New-Item -ItemType Directory -Force -Path examples\output
-```
-
-Run:
-
-```powershell
 .\out\build\x64-release-clean\examples\AeroForge6DoFRecordingExample.exe "examples/output/rocket_6dof_flight.csv"
 ```
 
-Output:
+Open the generated CSV in the visualizer to inspect simulated position, velocity, and attitude over time. This is a simplified 6DOF rigid-body demonstration, **not** the fully integrated powered, guided research-rocket mission.
 
-`examples/output/rocket_6dof_flight.csv`
+## Hardware-in-the-loop (HIL)
 
-The current example generates 1,001 snapshots across a 10-second simulation at a 0.01-second timestep.
-
-The recording includes:
-
-- Navigation-frame position
-- Navigation-frame velocity
-- Body-to-navigation quaternion
-- Body-frame angular velocity
-- Associated visualization telemetry
-
-The example uses AeroForge's existing 6DOF dynamics and RK4 numerical integration.
-
-Its applied forces, moments, mass, and inertia are simplified. It is a rigid-body demonstration, not a complete powered-rocket flight model.
-
-### Replay the Flight
-
-1. Launch AeroForge Visualizer.
-2. Select **File > Open telemetry CSV...**.
-3. Load `examples/output/rocket_6dof_flight.csv`.
-4. Open the Trajectory, Telemetry, and Vehicle 3D panels.
-5. Play the recording or seek between different flight times.
-
-The vehicle wireframe should change orientation as the recorded attitude quaternion evolves.
-
-Recorded 6DOF quaternion-driven vehicle rotation has been validated in the local application.
-
----
-
-## Physics-Driven Live 6DOF Simulation
-
-AeroForge supports real-time visualization of its own numerical physics simulation.
-
-Unlike recorded playback, this mode runs the simulation while the GUI is active.
-
-### Start a Live Simulation
-
-Launch AeroForge Visualizer, then select:
-
-**File > Start 6DOF live simulation**
-
-The application runs `SixDoFDynamicsModel` through `SimulationRunner` and `RK4Integrator`.
-
-The simulation is executed on a separate C++ worker thread.
-
-### Live Simulation Data Flow
+AeroForge supports software loopback and physical control exchange using the same logical sensor/control packet protocol. Its hardware runner uses asynchronous responses so that physics steps need not block on every UART round trip. Command sequence validation, freshness limits, and watchdog handling determine whether a returned command can be used; a zero-moment fallback is used when no acceptable command is available.
 
 ```text
-SixDoFDynamicsModel
-        |
-        v
-RK4Integrator
-        |
-        v
-SimulationRunner
-        |
-        v
-13-State Rigid-Body State
-        |
-        v
-VisualizationSnapshot
-        |
-        v
-LiveTelemetryPublisher
-        |
-        v
-VisualizationSession
-        |
-        +--> Dashboard
-        |
-        +--> Telemetry
-        |
-        +--> Trajectory
-        |
-        +--> Vehicle 3D
-        |
-        +--> Events / Performance
+AeroForge (host PC)                         External ESP32
+-------------------                        --------------
+6DOF physics / virtual IMU
+         |
+         +--- sensor packet ----> UART ----> packet validation
+                                              rate controller
+         <--- command packet --- UART <---- commanded moments
+         |
+command freshness / watchdog
+         |
+next physics integration step
 ```
 
-### Current Live Simulation Configuration
+### ESP32 hardware used for the recorded run
 
-| Parameter | Configuration |
-|---|---|
-| Dynamics | `SixDoFDynamicsModel` |
-| Integrator | RK4 |
-| Simulation timestep | 0.01 seconds |
-| Total integration steps | 1,000 |
-| Simulated duration | 10 seconds |
-| Execution | Separate C++ worker thread |
-| Timing | Real-time pacing using a steady clock |
-| State publishing | `LiveTelemetryPublisher` |
-| Cancellation | `std::stop_token` |
-| GUI history capacity | 2,048 samples |
+- **Chip:** Original ESP32-D0WD-V3 (revision 3.1), **not** ESP32-S3.
+- **USB serial adapter:** CH340, observed as `COM3` on the development PC.
+- **Firmware target:** ESP-IDF `esp32`.
+- **Physical HIL application UART:** 460800 baud in the latest recorded benchmark.
+- **Transport:** UART0 via the board's USB-to-serial connection; no external IMU or motor is needed.
 
-The worker computes position, velocity, attitude, and angular velocity and publishes corresponding snapshots.
+The firmware source directory may still be named `firmware/esp32s3/` for historical reasons. **The ESP-IDF target must match the actual chip**, regardless of the directory name.
 
-The worker does not invoke GLFW, OpenGL, Dear ImGui, or ImPlot directly.
+To build or flash the firmware from an ESP-IDF-enabled PowerShell terminal:
 
-### Starting and Stopping
+```powershell
+cd firmware/esp32s3
+idf.py set-target esp32
+idf.py build
+idf.py -p COM3 -b 115200 flash
+```
 
-The File menu provides:
+Here, `115200` is the **flashing speed**, not necessarily the firmware's application UART speed. The AeroForge host baud must match the baud actually configured in the flashed firmware. Close `idf.py monitor` and other serial programs before opening COM3 from AeroForge.
 
-- **Start synthetic live demo**
-- **Start 6DOF live simulation**
-- **Stop live source**
+See [ESP32 Setup](docs/hil/ESP32Setup.md), [HIL Architecture](docs/hil/HIL_ARCHITECTURE.md), and [Wire Protocol](docs/hil/HilWireProtocol.md) before changing firmware or UART settings.
 
-Starting one live source stops the previous source.
+### Software HIL benchmark
 
-Loading a recorded CSV also stops the active simulation worker.
+```powershell
+.\out\build\x64-release-clean\AeroForgeHilBenchmarks.exe 100000 out\verification\software-unpaced
+.\out\build\x64-release-clean\AeroForgeHilBenchmarks.exe 10000 out\verification\software-paced paced
+```
 
-The application requests cancellation and joins the simulation thread during shutdown.
+The recorded software benchmark emits `hil_samples.csv` and `hil_summary.json` in each selected output folder. Audit the saved evidence with the C++ verification tool:
 
-### Latest-Snapshot Semantics
+```powershell
+.\out\build\x64-release-clean\AeroForgeVerificationAudit.exe software out\verification\software-unpaced\hil_samples.csv out\verification\software-unpaced\hil_summary.json out\verification\SoftwareAudit.md
+.\out\build\x64-release-clean\AeroForgeVerificationAudit.exe software out\verification\software-paced\hil_samples.csv out\verification\software-paced\hil_summary.json out\verification\SoftwarePacedAudit.md
+```
 
-`LiveTelemetryPublisher` retains the latest published snapshot.
+The two recorded software audits **passed**. They also noted that per-row CSV `deadline_misses` was unavailable, so execution miss totals were read from the JSON summaries.
 
-This allows the GUI to retrieve recent simulation state without maintaining an unbounded publisher-side queue.
+### Physical HIL benchmark
 
-However, intermediate snapshots may be overwritten before the GUI displays them.
+After confirming the board's port and firmware application baud:
 
-Live visualization should therefore not be interpreted as lossless telemetry recording.
+```powershell
+.\out\build\x64-release-clean\AeroForgeHilHardwareBenchmarks.exe COM3 1000 out\hil-benchmarks\hardware-460800 460800
+```
 
-Use recorded telemetry output when a complete flight history is required.
+Audit the saved result:
 
-### Physical Modeling Limitations
+```powershell
+.\out\build\x64-release-clean\AeroForgeVerificationAudit.exe hardware out\hil-benchmarks\hardware-460800\hil_hardware_samples.csv out\hil-benchmarks\hardware-460800\hil_hardware_summary.json out\verification\HardwareAudit.md
+```
 
-The current physics-driven live demonstration uses simplified constant forces, moments, mass, and inertia.
+The physical audit **passed with a response-rate warning**, while the underlying hardware benchmark **did not meet** its 90% fresh-command acceptance target. The serial performance improvement work has been deferred rather than misrepresented as complete.
 
-It does not yet integrate all of AeroForge's available rocket, aerodynamic, sensor, navigation, and GNC components into a single guided flight.
+**Safety and verification:** HIL tests described here use a simulated vehicle, not physical actuators. GUI USB disconnect, port release, zero-command fallback, and reconnection are separate manual checks; they have not been recorded as completed in the available verification evidence. Do not attach motors or other physical actuators during these checks.
 
-Estimated state fields in this demonstration copy the simulated truth state. They do not represent independent navigation-estimator results.
+## Verification and performance evidence
 
-The live demonstration validates the physics-to-visualization integration rather than the complete guided-rocket reference mission.
+AeroForge uses GoogleTest/CTest component and integration tests, analytical comparisons, deterministic replay tests, numerical and performance benchmarks, and recorded verification evidence. Existing coverage includes numerical integration, 6DOF rigid-body dynamics, atmosphere/aerodynamics, propulsion, sensors, GNC, navigation, fault injection, Monte Carlo, telemetry, and visualization.
 
----
+Three recent HIL evidence datasets passed the C++ audit: **100,000-step software unpaced**, **10,000-step software paced**, and **1,000-step physical HIL**. An evidence audit checks recorded-data consistency; it does not replace external physical validation or make a failed performance threshold pass.
 
-## Verification and Testing
+Selected historical *different-workload* benchmarks, retained for engineering context:
 
-AeroForge includes automated testing across its mathematical, numerical, dynamics, sensor, navigation, control, telemetry, and execution components.
-
-Its verification approach includes:
-
-- Analytical checks
-- Unit tests
-- Integration tests
-- Numerical consistency checks
-- Deterministic simulation tests
-- Regression tests
-- Performance benchmarks
-
-### Phase 17 Visualization Validation
-
-The visualization implementation has been exercised with:
-
-- Recorded telemetry loading
-- Playback and seeking
-- External altitude-only telemetry
-- 6DOF recorded simulation telemetry
-- Quaternion-driven vehicle rotation
-- Synthetic live telemetry
-- Real 6DOF live simulation
-- GUI performance diagnostics
-- Automated regression testing
-
-The full automated suite was reported passing after live 6DOF integration.
-
-Specific source-switching, cancellation, and long-duration stability claims should be based on their corresponding tests rather than inferred from basic GUI operation.
-
-Detailed plans and results are available in:
-
-- [Verification and Validation Plan](docs/VERIFICATION_AND_VALIDATION_PLAN.md)
-- [Installation and Validation](docs/INSTALL_AND_VALIDATION.md)
-- [Visualization Performance Report](docs/performance/VisualizationPerformanceReport.md)
-
----
-
-## Performance and Benchmarking
-
-AeroForge includes numerical simulation and visualization benchmarks.
-
-Results are workload-specific and reflect the tested configuration.
-
-Historical core-simulation benchmarks and newer Phase 17 visualization results were collected in different sessions. They must not be treated as directly comparable before/after measurements.
-
-### Historical Numerical Performance
-
-| Workload / configuration | Reported result | Provenance |
+| Historical workload | Reported result | Source |
 |---|---:|---|
-| Euler integration, two-variable state, 25,000 steps × 5 runs | 8.76 million steps/s | [Integration baseline](docs/benchmarks/EarlyIntegrationBaseline.md) |
-| RK4 integration, two-variable state, same historical baseline | 1.61 million steps/s | [Integration baseline](docs/benchmarks/EarlyIntegrationBaseline.md) |
-| CSV telemetry export, 10,000 samples | 40.527 ms/export, versus 317.777 ms before optimization | [Performance report](docs/performance/PerformanceReport.md) |
-| Generic RK4 integration step | 0.363 µs/step, versus 0.916 µs before optimization | [Performance report](docs/performance/PerformanceReport.md) |
-| Full 6DOF RK4 integration step | 1.194 µs/step, versus 1.740 µs before optimization | [Performance report](docs/performance/PerformanceReport.md) |
-| Nominal execution stack, ten 10-second runs at 1 kHz | 100 simulated seconds in 0.0731406 wall seconds; 1,367.23× real-time | [Real-time performance](docs/performance/RealtimeExecutionPerformanceReport.md) |
-| Continuous nominal-stack execution, 300 simulated seconds | 0.234582 wall seconds; 1,278.87× real-time | [Real-time performance](docs/performance/RealtimeExecutionPerformanceReport.md) |
+| Euler, two-state numerical baseline | 8.76 million integration steps/s | [Early Integration Baseline](docs/benchmarks/EarlyIntegrationBaseline.md) |
+| RK4, two-state numerical baseline | 1.61 million integration steps/s | [Early Integration Baseline](docs/benchmarks/EarlyIntegrationBaseline.md) |
+| CSV export, 10,000 samples, optimized | 40.527 ms (317.777 ms before optimization) | [Performance Report](docs/performance/PerformanceReport.md) |
+| Generic RK4 integration step, optimized | 0.363 μs (0.916 μs before optimization) | [Performance Report](docs/performance/PerformanceReport.md) |
+| Visualization GUI frame interval, 600-frame capture | 16.6 ms average, approximately 60.24 FPS | [Visualization Performance Report](docs/performance/VisualizationPerformanceReport.md) |
 
-These are historical reported measurements, not independent physical accuracy validations.
+These results were collected with different harnesses and conditions. They must not be treated as a single matched end-to-end performance comparison. See [Measurement Audit](docs/performance/MeasurementAudit.md) and [Real-Time Execution Performance Report](docs/performance/RealtimeExecutionPerformanceReport.md) for context and limitations.
 
-### Phase 17 Visualization Benchmark Environment
-
-| Hardware | Specification |
-|---|---|
-| CPU | AMD Ryzen 9 5900X |
-| CPU cores / threads | 12 / 24 |
-| GPU | NVIDIA GeForce RTX 3080 |
-| GPU driver | 32.0.16.1088 |
-| RAM | 63.91 GiB reported |
-| Build | Windows x64, CMake/Ninja, Release |
-
-### CPU Visualization Benchmarks
-
-| Benchmark workload | Mean batch time |
-|---|---:|
-| CSV parsing, 50,000 rows | 490.232 ms |
-| Plot decimation, 50,000 points | 0.171 ms |
-| Camera projection, 1,000 points | 0.126 ms |
-| Snapshot publishing, 50,000 snapshots | 1.462 ms |
-
-Each result is the execution time for the complete named batch, not a single row, point, or snapshot.
-
-### GUI Frame-Interval Measurements
-
-| Metric | Measured result |
-|---|---:|
-| Sample window | 600 frames |
-| Mean frame interval | 16.6 ms |
-| Estimated frame rate | 60.24 FPS |
-| p50 frame interval | 16.6 ms |
-| p95 frame interval | 16.853 ms |
-| p99 frame interval | 17.044 ms |
-| Frames exceeding 16.667 ms | 59.2% |
-
-### Memory Measurements
-
-| Metric | Measured result |
-|---|---:|
-| Samples | 60 |
-| Average working set | 70.3308 MiB |
-| Minimum working set | 70.33 MiB |
-| Maximum working set | 70.34 MiB |
-
-The frame and memory captures were not labeled with a specific active GUI workload.
-
-Frame-interval measurements may include VSync, CPU work, driver behavior, and operating-system scheduling. They are not GPU-only rendering times.
-
-The 60-sample working-set results indicate stable memory use during that sampled interval, but do not establish the absence of memory leaks across longer workloads.
-
-For benchmark methodology, interpretation, and limitations, see:
-
-- [Benchmarking and Performance](docs/BENCHMARKING_AND_PERFORMANCE.md)
-- [Measurement Audit](docs/performance/MeasurementAudit.md)
-- [Visualization Performance Report](docs/performance/VisualizationPerformanceReport.md)
-
----
-
-## Repository Structure
+## Project structure
 
 ```text
 AeroForge/
-|
-+-- include/
-|   +-- math/
-|   +-- simulation/
-|   +-- dynamics/
-|   +-- environment/
-|   +-- aerodynamics/
-|   +-- rocket/
-|   +-- sensors/
-|   +-- navigation/
-|   +-- gnc/
-|   +-- actuators/
-|   +-- failures/
-|   +-- montecarlo/
-|   +-- reproducibility/
-|   +-- telemetry/
-|   +-- performance/
-|   +-- visualization/
-|
-+-- src/
-|   +-- Core subsystem implementations
-|   +-- visualization/
-|       +-- Live telemetry
-|       +-- Recorded telemetry
-|       +-- Live 6DOF simulation
-|       +-- GUI application and panels
-|
-+-- tests/
-|   +-- Core subsystem tests
-|   +-- Integration tests
-|   +-- visualization/
-|
-+-- benchmarks/
-|   +-- Core benchmarks
-|   +-- visualization/
-|
-+-- examples/
-|   +-- ballistic_projectile.cpp
-|   +-- rocket_6dof_flight.cpp
-|   +-- data/
-|   +-- output/              Generated recordings; not required in Git
-|
-+-- docs/
-|   +-- Technical specifications
-|   +-- Verification and validation
-|   +-- Visualization documentation
-|   +-- performance/
-|   +-- benchmarks/
-|
-+-- CMakeLists.txt
-+-- README.md
+├── include/                     Public C++ subsystem interfaces
+├── src/
+│   ├── math/                    Math and geometry
+│   ├── simulation/              Integrators, clocks, execution
+│   ├── dynamics/                Translational, rotational, 6DOF
+│   ├── environment/             Atmosphere and wind
+│   ├── aerodynamics/            Aerodynamic model components
+│   ├── rocket/                  Propulsion and variable mass
+│   ├── sensors/                 Sensor simulation
+│   ├── navigation/              State estimation/correction
+│   ├── gnc/                     Guidance and controllers
+│   ├── actuators/               Actuator models
+│   ├── failures/                Fault injection
+│   ├── montecarlo/              Statistical experiments
+│   ├── reproducibility/         Replay and deterministic seeds
+│   ├── telemetry/               Recording and analysis
+│   ├── hil/                     Software/physical HIL runtime
+│   └── visualization/           Core visualization and GUI
+├── tests/                       Existing GoogleTest suites
+├── benchmarks/                  Core, visualization, HIL workloads
+├── examples/                    Standalone demonstrations
+├── firmware/esp32s3/            ESP-IDF project (target: esp32)
+├── tools/verification/          C++ benchmark evidence auditor
+├── docs/                        Specifications, guides, reports
+├── cmake/                       Supporting CMake integration
+├── CMakeLists.txt
+└── README.md
 ```
 
-The repository contains both reusable simulation infrastructure and standalone examples.
+Generated build output, benchmark samples, and telemetry recordings should remain separate from source-controlled code unless intentionally curated as example data or release evidence.
 
-Generated build files, benchmark outputs, temporary datasets, and local GUI configuration files are not required for the documented source baseline.
+## Documentation
 
----
+**[Browse the complete documentation index](docs/README.md)** for all current guides, specifications, and preserved historical reports.
 
-## Technical Documentation
-
-| Document | Purpose |
+| Topic | Document |
 |---|---|
-| [System Architecture](docs/SYSTEM_ARCHITECTURE.md) | Subsystems, data flow, timing, and architectural boundaries |
-| [Reference Mission](docs/REFERENCE_MISSION.md) | Intended guided-rocket demonstration and acceptance criteria |
-| [Simulation Scope and Assumptions](docs/SIMULATION_SCOPE_AND_ASSUMPTIONS.md) | Physics fidelity, approximations, and exclusions |
-| [Coordinate Systems](docs/COORDINATE_SYSTEMS.md) | Coordinate frames, quaternion conventions, and transformations |
-| [Units and Conventions](docs/UNITS_AND_CONVENTIONS.md) | SI quantities, angle, time, and altitude conventions |
-| [Configuration and Reproducibility](docs/CONFIGURATION_AND_REPRODUCIBILITY.md) | Seeds, replay, and proposed mission configuration contract |
-| [Telemetry and Numerical Safety](docs/TELEMETRY_AND_NUMERICAL_SAFETY.md) | Recording, reporting, invariants, and error handling |
-| [Verification and Validation Plan](docs/VERIFICATION_AND_VALIDATION_PLAN.md) | Analytical, integration, regression, and statistical checks |
-| [Coding Standards](docs/CODING_STANDARDS.md) | C++20 conventions and engineering review criteria |
-| [Benchmarking and Performance](docs/BENCHMARKING_AND_PERFORMANCE.md) | Benchmarking methodology, reproducibility, and comparisons |
-| [Early Integration Baseline](docs/benchmarks/EarlyIntegrationBaseline.md) | Historical Euler and RK4 performance |
-| [Performance Report](docs/performance/PerformanceReport.md) | Numerical-core and telemetry optimization measurements |
-| [Real-Time Performance Report](docs/performance/RealtimeExecutionPerformanceReport.md) | Real-time execution and workload-specific measurements |
-| [Measurement Audit](docs/performance/MeasurementAudit.md) | Derived measurement verification and evidence limitations |
-| [Visualization Architecture](docs/VISUALIZATION_ARCHITECTURE.md) | Recorded/live visualization architecture and thread ownership |
-| [Visualization User Guide](docs/VISUALIZATION_USER_GUIDE.md) | Playback, live modes, panels, and interaction |
-| [Installation and Validation](docs/INSTALL_AND_VALIDATION.md) | Build procedures and Phase 17 validation |
-| [Visualization Performance Report](docs/performance/VisualizationPerformanceReport.md) | Phase 17 CPU, GUI, and memory measurements |
+| What is implemented | [Current Implementation](docs/architecture/CurrentImplementation.md) |
+| Architecture and modeling scope | [System Architecture](docs/SYSTEM_ARCHITECTURE.md), [Scope and Assumptions](docs/SIMULATION_SCOPE_AND_ASSUMPTIONS.md) |
+| Reference guided-rocket mission | [Reference Mission](docs/REFERENCE_MISSION.md) |
+| Build and testing | [Installation and Validation](docs/INSTALL_AND_VALIDATION.md) |
+| Coordinate and unit conventions | [Coordinate Systems](docs/COORDINATE_SYSTEMS.md), [Units](docs/UNITS_AND_CONVENTIONS.md) |
+| Recorded/live GUI | [Visualizer User Guide](docs/visualization/VISUALIZATION_USER_GUIDE.md) |
+| HIL architecture and protocol | [HIL Architecture](docs/hil/HIL_ARCHITECTURE.md), [Wire Protocol](docs/hil/HilWireProtocol.md) |
+| ESP32 hardware setup | [ESP32 Setup](docs/hil/ESP32Setup.md) |
+| Current measured verification | [Verification Results](docs/verification/CurrentVerificationResults.md), [HIL Performance](docs/performance/HilPerformanceReport.md) |
+| Numerical and visualization performance | [Benchmarking](docs/BENCHMARKING_AND_PERFORMANCE.md), [Visualization Performance](docs/performance/VisualizationPerformanceReport.md) |
+| Coding and reproducibility conventions | [Coding Standards](docs/CODING_STANDARDS.md), [Configuration and Reproducibility](docs/CONFIGURATION_AND_REPRODUCIBILITY.md) |
 
-Some design documents also describe proposed capabilities. The presence of a design specification does not imply every described integration has been completed.
+## Limitations and future work
 
----
+AeroForge is an engineering simulation and learning/research project. It is **not** a flight-certified simulator, safety-qualified physical controller, or evidence of a complete flight-ready guidance system. Its detailed guided-rocket reference mission remains a broader integration and validation objective; the present live 6DOF demonstrations use simplified physical inputs.
 
-## Current Limitations
+Current limitations include:
 
-AeroForge is an engineering simulation and research project, not a flight-certified simulator or operational flight controller.
+- No claim of complete reference-mission physical validation against real flight data.
+- No hard real-time guarantees from Windows host scheduling or CH340 USB serial communication.
+- Physical HIL produced fewer fresh controller replies than 100 Hz physics steps and missed its defined fresh-response acceptance threshold.
+- Manual physical-GUI disconnect, watchdog fallback, and reconnection validation has not yet been signed off in the reported evidence.
+- Several advanced fidelity models described in design documents remain intended extensions rather than verified features.
 
-It does not claim:
+Potential improvements include additional guided-flight integration, richer model validation, longer hardware endurance, serial throughput tuning, and broader compiler/platform coverage. Deferred enhancements will be organized in `NextSteps.md` after the release-preparation work is finished; that document is not presented as already existing.
 
-- Computational fluid dynamics
-- Flexible-body or structural dynamics
-- High-fidelity combustion modeling
-- Orbital mechanics
-- Flight certification
-- Validated real-world guidance or control authority
-- Complete end-to-end validation of the guided research-rocket reference mission
+## Licensing
 
-Although AeroForge contains propulsion, navigation, guidance, control, sensor, and failure-modeling components, their presence does not mean every component has been integrated into a single validated mission.
-
-The Phase 17 live visualization example uses simplified rigid-body dynamics and does not replace a full powered-rocket or closed-loop GNC demonstration.
-
----
-
-## Future Development
-
-Potential future development includes:
-
-1. Completing the integrated guided-rocket reference mission.
-2. Connecting realistic thrust, propellant depletion, variable mass, aerodynamics, navigation, and GNC into a single flight scenario.
-3. Validating the complete simulated flight against analytical results and suitable reference data.
-4. Expanding failure-injection and Monte Carlo experiments for integrated missions.
-5. Adding more complete live telemetry transport and recording capabilities.
-6. Extending visualization performance instrumentation to GPU timings and simulation-to-display latency.
-7. Improving vehicle visualization and engineering analysis workflows.
-
-These are future development directions rather than claims of functionality already validated in Phase 17.
-
----
-
-## License
-
-No license was included in the previously documented repository inventory.
-
-A license should be selected and added explicitly before permitting external redistribution or reuse under defined terms.
+No license is asserted by this README. Refer to the repository's actual `LICENSE` file, if present, for applicable permissions and conditions. Until a license is selected and published, do not assume the source is granted an open-source license.

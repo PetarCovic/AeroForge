@@ -7,6 +7,9 @@
 #include "panels/Vehicle3DPanel.h"
 #include "panels/EventsPanel.h"
 #include "panels/PerformancePanel.h"
+#include "panels/HilDashboardPanel.h"
+#include <hil/HilMonitoredRun.h>
+#include <hil/HilHardwareRun.h>
 #include <visualization/SixDoFLiveSimulation.h>
 #include <GLFW/glfw3.h>
 #include <imgui.h>
@@ -19,6 +22,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
+#include <exception>
 #include <thread>
 
 namespace aeroforge::visualization::gui
@@ -52,6 +56,7 @@ namespace aeroforge::visualization::gui
     }
     void VisualizationApp::loadRecording(const char* path) noexcept
     {
+        stopHilLive();
         stopRealLive();
         stopSyntheticLive();
         try { session_.loadRecording(path);notification_ = "Loaded telemetry recording."; }
@@ -73,6 +78,7 @@ namespace aeroforge::visualization::gui
     }
     void VisualizationApp::startSyntheticLive()
     {
+        stopHilLive();
         stopRealLive();
         stopSyntheticLive();
         auto publisher = std::make_shared<LiveTelemetryPublisher>();
@@ -106,6 +112,7 @@ namespace aeroforge::visualization::gui
 
     void VisualizationApp::startRealLive()
     {
+        stopHilLive();
         // Stop either previous live source before replacing it.
         stopSyntheticLive();
         stopRealLive();
@@ -151,6 +158,95 @@ namespace aeroforge::visualization::gui
         notification_ =
             "Live 6DOF simulation started. "
             "Using actual RK4-integrated physics.";
+    }
+
+    void VisualizationApp::stopHilLive() noexcept
+    {
+        if (hilThread_.joinable())
+        {
+            hilThread_.request_stop();
+            hilThread_.join();
+        }
+        hilPublisher_.reset();
+        // Retain previous measurements for inspection.
+    }
+
+    void VisualizationApp::startHilLive()
+    {
+        stopSyntheticLive();
+        stopRealLive();
+        stopHilLive();
+
+        auto store = std::make_shared<hil::HilTelemetryStore>();
+        auto publisher = std::make_shared<LiveTelemetryPublisher>();
+        session_.attachLive(publisher);
+        hilTelemetry_ = store;
+        hilPublisher_ = publisher;
+        panels_.hilMonitor = true;
+
+        hilThread_ = std::jthread([store, publisher](std::stop_token token)
+            {
+                try
+                {
+                    hil::HilMonitoredRunConfig config{};
+                    config.stepS = 0.01;
+                    config.steps = 12000;
+                    config.realtimePacing = true;
+                    hil::runHilMonitoredLoopback(
+                        *store, publisher.get(), token, config);
+                }
+                catch (const std::exception& e)
+                {
+                    std::fprintf(stderr, "Software HIL failed: %s\n", e.what());
+                    hil::HilHealthSnapshot failed{};
+                    failed.mode = hil::HilLinkMode::SOFTWARE_LOOPBACK;
+                    failed.watchdogState = hil::HilWatchdogState::FAULTED;
+                    store->publishHealth(failed);
+                }
+            });
+        notification_ = "Software HIL loopback started (no external controller).";
+    }
+
+    void VisualizationApp::startHilHardwareLive()
+    {
+#ifndef _WIN32
+        notification_ = "Physical COM-port HIL requires Windows.";
+#else
+        stopSyntheticLive();
+        stopRealLive();
+        stopHilLive();
+
+        auto store = std::make_shared<hil::HilTelemetryStore>();
+        auto publisher = std::make_shared<LiveTelemetryPublisher>();
+        session_.attachLive(publisher);
+        hilTelemetry_ = store;
+        hilPublisher_ = publisher;
+        panels_.hilMonitor = true;
+
+        hilThread_ = std::jthread([store, publisher](std::stop_token token)
+            {
+                try
+                {
+                    hil::HilHardwareRunConfig config{};
+                    config.portName = L"COM3";
+                    config.baudRate = 115200;
+                    config.stepS = 0.01;
+                    config.steps = 12000;
+                    hil::runHilHardwareClosedLoop(
+                        *store, publisher.get(), token, config);
+                }
+                catch (const std::exception& e)
+                {
+                    std::fprintf(stderr, "Physical HIL failed: %s\n", e.what());
+                    hil::HilHealthSnapshot failed{};
+                    failed.mode = hil::HilLinkMode::SERIAL;
+                    failed.watchdogState = hil::HilWatchdogState::FAULTED;
+                    failed.serialState = hil::HilSerialWorkerState::FAILED;
+                    store->publishHealth(failed);
+                }
+            });
+        notification_ = "Hardware HIL requested on COM3 at 115200 baud.";
+#endif
     }
 
     bool VisualizationApp::initialize()
@@ -224,8 +320,19 @@ namespace aeroforge::visualization::gui
             {
                 startRealLive();
             }
+            if (ImGui::MenuItem("Start HIL software loopback"))
+            {
+                startHilLive();
+            }
+#ifdef _WIN32
+            if (ImGui::MenuItem("Start HIL hardware (COM3)"))
+            {
+                startHilHardwareLive();
+            }
+#endif
             if (ImGui::MenuItem("Stop live source"))
             {
+                stopHilLive();
                 stopSyntheticLive();
                 stopRealLive();
                 session_.stopLive();
@@ -243,6 +350,7 @@ namespace aeroforge::visualization::gui
             ImGui::MenuItem("Vehicle 3D", nullptr, &panels_.vehicle3D);
             ImGui::MenuItem("Events", nullptr, &panels_.events);
             ImGui::MenuItem("Performance", nullptr, &panels_.performance);
+            ImGui::MenuItem("HIL Monitor", nullptr, &panels_.hilMonitor);
             ImGui::Separator();
             ImGui::MenuItem("ImGui Demo", nullptr, &showImGuiDemo_);
             ImGui::MenuItem("ImPlot Demo", nullptr, &showImPlotDemo_);
@@ -278,6 +386,7 @@ namespace aeroforge::visualization::gui
         ImGui::DockBuilderDockWindow("Telemetry", bottom);
         ImGui::DockBuilderDockWindow("Events", right);
         ImGui::DockBuilderDockWindow("Performance", rb);
+        ImGui::DockBuilderDockWindow("HIL Monitor", right);
         ImGui::DockBuilderFinish(id);
         applyDefaultLayout_ = false;
     }
@@ -315,6 +424,7 @@ namespace aeroforge::visualization::gui
         if (panels_.vehicle3D)panels::drawVehicle3DPanel(&panels_.vehicle3D, session_, camera_);
         if (panels_.events)panels::drawEventsPanel(&panels_.events, session_);
         if (panels_.performance)panels::drawPerformancePanel(&panels_.performance, session_, frameStats_);
+        if (panels_.hilMonitor)panels::drawHilDashboardPanel(&panels_.hilMonitor, hilTelemetry_.get());
         if (showImGuiDemo_)ImGui::ShowDemoWindow(&showImGuiDemo_);
         if (showImPlotDemo_)ImPlot::ShowDemoWindow(&showImPlotDemo_);
         if (showLoadDialog_)
@@ -355,6 +465,7 @@ namespace aeroforge::visualization::gui
     }
     void VisualizationApp::shutdown() noexcept
     {
+        stopHilLive();
         stopRealLive();
         stopSyntheticLive();
         if (window_)glfwMakeContextCurrent(window_);

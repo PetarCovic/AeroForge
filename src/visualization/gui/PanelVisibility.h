@@ -11,5 +11,6 @@ namespace aeroforge::visualization::gui
         bool vehicle3D = true;
         bool events = true;
         bool performance = true;
+        bool hilMonitor = true;
     };
 }

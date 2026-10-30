@@ -1,6 +1,6 @@
 # AeroForge Benchmarking and Performance Engineering
 
-> **Scope and evidence standard (October 2026):** This guide describes how to interpret and reproduce the benchmark *types* represented in the local Git history and summarizes only numerical results documented in AeroForge's uploaded historical reports. The repository source and the raw individual benchmark logs were not included in the documentation archive. Commands below are build/launch examples; command-line switches accepted by `AeroForgeBenchmarks` must be confirmed with the installed executable before publication.
+> **Scope and evidence standard (October 2026):** Sections covering numerical, optimization, and real-time measurements preserve historical report data and their documented limitations. Later software and physical HIL runs have separate saved CSV/JSON evidence and auditor results; they are documented in [`performance/HilPerformanceReport.md`](performance/HilPerformanceReport.md) and [`verification/CurrentVerificationResults.md`](verification/CurrentVerificationResults.md). Benchmark results from different workloads are not directly comparable. Verify command-line options against the executable in the local build.
 
 ## 1. Questions the measurements answer
 
@@ -21,7 +21,7 @@ The following documents are original report data preserved with clarification:
 - [`performance/RealtimeExecutionPerformanceReport.md`](performance/RealtimeExecutionPerformanceReport.md): separately recorded unpaced, real-time and fixed-rate behavior, integrated nominal-flight throughput, incremental subsystem loading and a 300-second simulated-duration run.
 - [`performance/MeasurementAudit.md`](performance/MeasurementAudit.md): arithmetic recomputation and exact interpretation limits for the numbers above.
 
-**Evidence tiers:** historical report = reported measurement; verified calculation = arithmetic reproduced from reported values; independent reproduction = benchmark rerun plus raw logs and machine/build provenance (not supplied in this archive). Only the first two tiers are supported in this package.
+**Evidence tiers:** historical report = recorded measurement; verified calculation = arithmetic reproduced from reported numbers; evidence audit = automated checks on an available CSV/JSON pair; independent reproduction = a new run with recorded source revision, raw logs, and environment metadata. The recent HIL datasets have passed an internal-consistency audit, but that is not independent external validation.
 
 ## 3. Experimental environments
 
@@ -182,3 +182,14 @@ A run should be treated as independently reproducible only when its input revisi
 Use language such as **“Measured 1,367× faster than real time for a nominal 10-second, 1-kHz-physics benchmark on an optimized x64 Release build”** rather than “AeroForge is always 1,367× real time.”
 
 Likewise, say **“Reduced 10,000-sample CSV export latency from 317.777 ms to 40.527 ms in a matched optimization benchmark”** rather than claiming universal 8× CSV acceleration. No results in these reports establish operational flight certification, cross-platform performance, deterministic real-time scheduling, or a general-purpose physics engine performance rank.
+
+
+## 11. Current HIL benchmarks and evidence auditing
+
+The latest verified software-loopback workload completed **100,000/100,000 accepted commands unpaced** and **10,000/10,000 commands paced at a 100 Hz simulation schedule**, with zero observed execution deadline misses and zero paced completion deadline misses. The paced run reported **0.1618 ms p99 start lateness**. The physical ESP32 benchmark at 460800 baud completed **1,000 physics steps**, with **641 accepted new controller responses** and **997 steps having valid control**. Its mean response latency was **15.5717 ms**, and the benchmark did **not** meet its 90% new-command acceptance criterion.
+
+The C++ evidence auditor passed the software-unpaced, software-paced, and hardware CSV/JSON pairs. Its pass status means the data files are internally consistent under implemented checks; it does **not** make a failed physical throughput target pass. Details and source file names are provided in the [HIL performance report](performance/HilPerformanceReport.md).
+
+The existing software benchmark emits `hil_samples.csv` and `hil_summary.json`. Avoid inferring filenames from development milestones or renaming only the invocation path without changing the producer.
+
+Do not label a paced 100 Hz simulation as a verified 100 Hz external-controller loop unless fresh hardware command timing independently establishes that rate.

@@ -1,152 +1,65 @@
+# AeroForge Visualization Architecture
 
-## Phase 17.10 — Physics-Driven Live Visualization
+## Purpose and status
 
-### Overview
+AeroForge supports recorded telemetry playback, synthetic live demonstration data, physics-driven six-degree-of-freedom (6DOF) simulation, and HIL monitoring. The application uses GLFW/OpenGL, Dear ImGui, and ImPlot. Its live display is observational: rendering must not control simulation time or modify the authoritative vehicle state.
 
-AeroForge supports both recorded telemetry playback and
-physics-driven live visualization.
-
-Recorded visualization loads a previously generated CSV.
-
-Live visualization allows AeroForge to calculate 6DOF
-rigid-body motion and publish state snapshots while the
-GUI remains responsive.
-
-### Architecture
+## Data flow
 
 ```text
-             AeroForge Physics Engine
-                      |
-              SixDoFDynamicsModel
-                      |
-                RK4Integrator
-                      |
-                SimulationRunner
-                      |
-                13-State Rigid Body
-                      |
-              Snapshot Conversion
-                      |
-             LiveTelemetryPublisher
-                      |
-              VisualizationSession
-                      |
-        +-------------+-------------+
-        |             |             |
-     Telemetry     Trajectory     Vehicle 3D
-        |             |             |
-        +-------------+-------------+
-                      |
-                Dear ImGui GUI
+ Recorded CSV -----------+
+                         |
+ Synthetic producer -----+--> VisualizationSession --> panels / plots / 3D
+                         |
+ 6DOF simulation --------+
+       |                 |
+       +--> LiveTelemetryPublisher
+                         |
+ Hardware / software HIL +--> HIL telemetry / monitoring
 ```
 
-### Authoritative State
+The producer and renderer run on separate execution paths. The GUI thread owns Dear ImGui, GLFW, and OpenGL operations. Worker threads publish snapshots and must not call rendering APIs.
 
-The 6DOF state is represented as:
+## Authoritative state and frames
 
-| Index | Variable | Frame |
+The live physics source uses a 13-component rigid-body representation:
+
+| Indices | Quantity | Frame / storage |
 |---|---|---|
-| 0–2 | Position | Navigation / NED |
-| 3–5 | Velocity | Navigation / NED |
-| 6–9 | Quaternion [w, x, y, z] | Body to navigation |
-| 10–12 | Angular velocity | Body |
+| 0–2 | Position | Local navigation, NED |
+| 3–5 | Velocity | Local navigation, NED |
+| 6–9 | Attitude | Scalar-first `[w, x, y, z]`, body to navigation |
+| 10–12 | Angular velocity | Body frame |
 
-The quaternion is scalar-first and represents the
-orientation of the body frame relative to navigation.
+The authoritative physics state is distinct from estimated navigation state, synthetic demonstration data, and recorded datasets with missing fields. See [COORDINATE_SYSTEMS.md](../COORDINATE_SYSTEMS.md).
 
-### Live Simulation
+## Live simulation implementation
 
-Implementation:
+`SixDoFLiveSimulation` uses the existing 6DOF dynamics and RK4 integration to publish snapshots. The documented live demonstration uses a 0.01-second timestep and simplified forces/moments. It is not evidence that a complete powered guided-rocket mission has been visualized end-to-end.
 
-`include/visualization/SixDoFLiveSimulation.h`
+`VisualizationApp` manages worker lifecycle and source switching. Worker cancellation is requested before joining/disposing the producer. Opening a new source should stop the previous live producer; resource cleanup and source switching are part of the manual acceptance checks.
 
-`src/visualization/SixDoFLiveSimulation.cpp`
+## Snapshot retention
 
-The live simulation:
+`LiveTelemetryPublisher` retains the latest snapshot; intermediate snapshots may be overwritten before the GUI reads them. `VisualizationSession` retains a bounded plotting history (the earlier implementation documented a capacity of 2,048 samples). Neither mechanism is a lossless flight recorder. Use recorded telemetry CSV for complete post-run history.
 
-- Uses the existing 6DOF dynamics engine.
-- Integrates using RK4.
-- Uses simulation time as the authoritative time.
-- Can pace execution using a steady wall-clock timer.
-- Publishes snapshots to LiveTelemetryPublisher.
-- Supports cancellation using std::stop_token.
+## Panels
 
-The current demonstration runs 1,000 integration steps
-at dt = 0.01 seconds, representing 10 simulated seconds.
+- **Dashboard:** active source and current state.
+- **Playback:** recorded-data timeline and playback controls.
+- **Telemetry:** selected time histories via ImPlot.
+- **Trajectory:** NED-based track and altitude history.
+- **Vehicle 3D:** quaternion-driven orientation display.
+- **Events:** available event annotations.
+- **Performance:** GUI frame-interval observations.
+- **HIL Monitor:** software/hardware controller status and telemetry.
 
-It uses simplified constant forces and moments.
+Availability of a panel is distinct from verification of every mode and failure scenario.
 
-### Threading and Ownership
+## Synchronization and timing
 
-VisualizationApp starts the real simulation on a
-std::jthread.
+GUI frame rate, physics update rate, sensor sampling cadence, and external-controller response rate are separate metrics. VSync may influence GUI frame intervals, but must not become the physics time source. The 100 Hz HIL physics benchmark results do not imply a 100 FPS renderer or a fresh 100 Hz ESP32 command stream.
 
-The simulation thread calculates state and publishes
-snapshots. It never calls GLFW, OpenGL, Dear ImGui, or
-ImPlot rendering functions.
+## Verification status
 
-The GUI thread reads the publisher through
-VisualizationSession.
-
-The publisher uses a mutex to protect access to its
-latest snapshot.
-
-VisualizationApp requests cancellation and joins its
-worker thread before releasing the associated publisher.
-
-Switching live sources, loading a recording, or closing
-the application stops the active simulation worker.
-
-### Snapshot Retention
-
-LiveTelemetryPublisher stores only the latest snapshot.
-
-This design avoids an unbounded publisher-side queue,
-but intermediate simulation states can be overwritten
-before the GUI observes them.
-
-VisualizationSession retains a bounded history for
-live plotting, with a capacity of 2,048 samples.
-
-The retained GUI history must not be treated as a
-lossless flight recording.
-
-Use recorded CSV telemetry when a complete history is
-required.
-
-### Current Simulation Limitations
-
-The live 6DOF demonstration is a functional integration
-test of the simulator and visualizer.
-
-It does not currently include:
-
-- Time-varying rocket engine thrust
-- Propellant depletion
-- Vehicle mass depletion
-- Complete aerodynamic force modeling
-- Active guidance and attitude control
-- Navigation estimator outputs
-
-Estimated position, velocity, attitude, and angular
-velocity currently mirror the authoritative simulated
-truth state in this demonstration.
-
-They are not independent navigation estimates.
-
-### Verification
-
-Phase 17 verification includes:
-
-- Recorded telemetry loading
-- 6DOF quaternion animation
-- Physics-driven live visualization
-- Worker cancellation and source switching
-- Automated regression testing
-- CPU visualization benchmarks
-- GUI frame-interval monitoring
-- Process memory measurement
-
-See:
-
-`docs/performance/VisualizationPerformanceReport.md`
+Automated regression tests and existing visualization microbenchmarks cover components of the system. The recorded visualization performance report describes a measured historical GUI session; it does not establish GPU-only rendering time or all-workload performance. GUI hardware disconnect/reconnect behavior remains subject to a separate manual sign-off. See [VISUALIZATION_USER_GUIDE.md](VISUALIZATION_USER_GUIDE.md) and [VisualizationPerformanceReport.md](../performance/VisualizationPerformanceReport.md).

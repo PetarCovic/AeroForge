@@ -1,10 +1,9 @@
-
-# AeroForge — Phase 17 Visualization Performance Report
+# AeroForge — Visualization Performance Report
 
 ## 1. Overview
 
 This document records performance measurements for AeroForge's
-Phase 17 visualization platform.
+visualization platform.
 
 The visualization platform includes:
 
@@ -248,7 +247,7 @@ summary above.
 
 ## 6. Real 6DOF Simulation Integration
 
-Phase 17 includes a physics-driven live visualization
+The visualization implementation includes a physics-driven live visualization
 source implemented by `SixDoFLiveSimulation`.
 
 It uses:
@@ -323,7 +322,7 @@ that a specific performance target was met.
 
 ## 9. Conclusions
 
-AeroForge Phase 17 provides a working interactive
+AeroForge provides a working interactive
 visualization system for recorded and live 6DOF
 rigid-body simulation data.
 
@@ -386,4 +385,4 @@ Potential future improvements include:
 6. Profiling camera rendering and plotting hot paths.
 
 These are not prerequisites for the functional completion
-of Phase 17.
+of the recorded visualization implementation.

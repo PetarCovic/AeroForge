@@ -102,17 +102,15 @@ Thumbs.db
 desktop.ini
 
 # ------------------------------------------------------------
-# Local installation / integration scripts
-# ------------------------------------------------------------
-/tools/phase17_10_reallive/
-/tools/install_phase_17_10_reallive.py
-/tools/install_phase17_10_reallive.py
-/tools/install_phase_17_10_reallive.py.bak
-
-# ------------------------------------------------------------
 # Locally imported datasets
 # ------------------------------------------------------------
 /examples/data/
 
 # Temporary Phase 17 integration installer
 /tools/install_phase_17_10_reallive.py
+
+# ESP-IDF local configuration and generated outputs
+firmware/**/build/
+firmware/**/sdkconfig
+firmware/**/sdkconfig.old
+firmware/**/managed_components/
