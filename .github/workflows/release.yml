@@ -55,7 +55,7 @@ jobs:
           )
 
           foreach ($name in $required) {
-            $source = Get-ChildItem build -Recurse -Filter $name |
+            $source = Get-ChildItem build -Recurse -File -Filter $name |
               Where-Object { $_.DirectoryName -match '[\\/]Release$' } |
               Select-Object -First 1 -ExpandProperty FullName
 
@@ -66,15 +66,28 @@ jobs:
             Copy-Item $source -Destination $destination
           }
 
+          if (-not (Test-Path LICENSE)) { throw 'LICENSE is required for this release' }
           Copy-Item README.md -Destination $destination
-          Copy-Item docs/INSTALL_AND_VALIDATION.md -Destination $destination
+          Copy-Item LICENSE -Destination $destination
+          Copy-Item docs -Destination $destination -Recurse -Force
+          Copy-Item demo -Destination $destination -Recurse -Force
 
-          if (Test-Path LICENSE) {
-            Copy-Item LICENSE -Destination $destination
+          # Preserve bundled third-party license texts from CMake FetchContent sources.
+          $licenseDestination = Join-Path $destination 'THIRD_PARTY_LICENSES'
+          New-Item -ItemType Directory -Path $licenseDestination -Force | Out-Null
+          foreach ($dependency in (Get-ChildItem 'build/_deps' -Directory | Where-Object { $_.Name -like '*-src' })) {
+            foreach ($pattern in @('LICENSE*', 'COPYING*', 'NOTICE*')) {
+              foreach ($licenseFile in (Get-ChildItem $dependency.FullName -File -Filter $pattern -ErrorAction SilentlyContinue)) {
+                Copy-Item $licenseFile.FullName -Destination (Join-Path $licenseDestination "$($dependency.Name)-$($licenseFile.Name)") -Force
+              }
+            }
           }
 
           Compress-Archive -Path "$destination/*" `
             -DestinationPath 'dist/AeroForge-windows-x64.zip' -Force
+
+          $hash = (Get-FileHash 'dist/AeroForge-windows-x64.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  AeroForge-windows-x64.zip" | Set-Content 'dist/AeroForge-windows-x64.zip.sha256' -Encoding ascii
 
       - name: Create draft GitHub release
         shell: pwsh
@@ -83,7 +96,9 @@ jobs:
         run: |
           gh release create "$env:GITHUB_REF_NAME" `
             'dist/AeroForge-windows-x64.zip' `
+            'dist/AeroForge-windows-x64.zip.sha256' `
             --verify-tag `
             --draft `
             --title "AeroForge $env:GITHUB_REF_NAME" `
-            --generate-notes
+            --notes-file 'docs/releases/v0.1.0.md'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
